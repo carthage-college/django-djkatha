@@ -1,0 +1,8 @@
+Django==2.2.8
+mysqlclient==1.4.2
+python-ldap==3.1.0
+pyodbc==4.0.26
+bootstrap_admin==0.4.0
+django-bootstrap4==0.0.8
+pycryptodome==3.8.1
+django-loginas==0.3.6
