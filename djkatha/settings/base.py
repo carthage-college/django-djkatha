@@ -5,10 +5,19 @@ Django settings for project.
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
 
-from djzbar.settings import INFORMIX_EARL_TEST as INFORMIX_EARL
-from djzbar.settings import JX_EARL_PROD
-from djzbar.settings import JX_EARL_TEST
-from djzbar.settings import INFORMIX_ODBC
+# sqlserver connection string
+from djimix.settings.local import MSSQL_EARL
+from djimix.settings.local import INFORMIX_ODBC, INFORMIX_ODBC_TRAIN
+from djimix.settings.local import (
+    INFORMIXSERVER,
+    DBSERVERNAME,
+    INFORMIXDIR,
+    ODBCINI,
+    ONCONFIG,
+    INFORMIXSQLHOSTS,
+    LD_LIBRARY_PATH,
+    LD_RUN_PATH
+)
 
 # Debug
 DEBUG = False
