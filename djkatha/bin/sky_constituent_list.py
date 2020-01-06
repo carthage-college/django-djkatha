@@ -76,12 +76,13 @@ parser.add_argument(
       Then determine if the student is in Raiser's Edge by reading the list
       just retrieved. 
 
-        Currently the student adds would be periodic
-        OMatic processes, but I would possibly need to create the custom field
-        Record if OMatic doesn't create it 
+        Currently the student adds would be periodic OMatic processes, 
+        but I would possibly need to create the custom field record if 
+        OMatic doesn't create it 
         
         May be easiest to just purge the table and repopulate it periodically
-
+        What about graduations then?
+        
       If not add student  ??,
           then add the custom field record  ???
       Else - find out of custom field record exists
@@ -100,21 +101,18 @@ def fn_convert_date(date):
         '%Y-%m-%dT%H:%M:%S%z'
         # timestamp = date.replace(tzinfo=timezone.utc).timestamp()
         # print(timestamp)
-        # ndate = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f")
-        # ndate = datetime.strptime(date, "%Y-%m-%d %H:M:%S.%f-z")
 
         # Use tool calld Arrow, because BB date formats are a mess
         # creates an Arrow object
         ndate = arrow.get(date)
-        # print(ndate)
+        print(ndate)
 
         # arrow has a datetime for its arrow object
         dt = ndate.datetime
 
         #Now I have something I can format
-        # retdate = datetime.strftime(dt, "%Y-%m-%d")
         retdate = datetime.strftime(dt, "%m/%d/%Y")
-        # print(retdate)
+        print(retdate)
     else:
         retdate = ''
     # print(str(date) + ',' + str(retdate))
@@ -125,17 +123,17 @@ def fn_insert_local(i):
 
     try:
         if i['type'] == 'Individual':
-            dt_add = fn_convert_date((i['date_added']))
-            dt_mod = fn_convert_date((i['date_modified']))
             fullname = i['first'].strip() + ' ' + i['last'].strip()
-            print(dt_mod)
+            id = i['lookup_id']
+            bbid = i['id']
+            typ = i['type']
 
             q_ins_sql = '''INSERT INTO cx_sandbox:raisers_edge_id_match 
                 (id, re_id, fullname, category, const_type) 
                 VALUES(?, ?, ?, ?, ?)'''
 
-            q_ins_args = (i['lookup_id'], i['id'], fullname, 'Student Status',
-                          i['type'])
+            q_ins_args = (id, bbid,  fullname, 'Student Status',
+                          typ)
 
             print(q_ins_sql)
             print(q_ins_args)
@@ -157,21 +155,16 @@ def fn_update_local(i):
         carth_id = i['lookup_id']
         name = i['first'].strip() + ' ' + i['last'].strip()
         type = i['type']
-        dt_add = fn_convert_date((i['date_added']))
-        dt_mod = fn_convert_date((i['date_modified']))
-        print(dt_mod)
-        print(dt_add)
 
         if type == 'Individual':
             print('UPDATE: Name = ' + name + ', CarthID = ' + str(carth_id)
             + ', BlackbaudID = ' + str(bb_id) + ', type = '
             + type)
         q_upd_sql = '''UPDATE cx_sandbox:raisers_edge_id_match
-                SET re_id = ?, fullname = ?, category = ?, const_type = ?, 
-                date_added = ?
+                SET re_id = ?, fullname = ?, category = ?, const_type = ?
                 WHERE id = ?
                 '''
-        q_upd_args = (bb_id, name, 'Student Status', type, carth_id, dt_add)
+        q_upd_args = (bb_id, name, 'Student Status', type, carth_id)
         print(q_upd_args)
         connection = get_connection(EARL)
         print(q_upd_sql)
@@ -201,29 +194,18 @@ def main():
         # print("Current Token = ")
         # print(current_token)
 
-
-        """Here is a question:  There will be over 100k entries in their
-            system.  How can I retrieve only students?"""
-        """-----Get a list of constituents-------"""
-        """---May need this to match Carthage ID to Blackbaud ID------"""
+        """-----Get a list of constituents with a custom field of 
+            Student Status-------"""
+        """---We need this to match Carthage ID to Blackbaud ID------"""
         x = get_constituent_list(current_token)
         for i in x['value']:
             # print(x)
             #     print(i['id'])
             carth_id = i['lookup_id']
 
-
             """Will write the BB ID to a table - not yet created
                 will be in a mysql database...for now in CX sandbox
             """
-            # q_ins_wc = '''
-            # INSERT  INTO
-            # cc_work_cat_table(work_cat_code, work_cat_descr,
-            #                   active_date)
-            # VALUES(?, ?, ?)'''
-            #     q_ins_wc_args = (workercatcode,workercatdescr,
-            #                      datetime.now().strftime("%m/%d/%Y"))
-            # engine.execute(q_ins_wc, q_ins_wc_args)
             print(carth_id)
 
             chk_sql = '''select count(id) from
@@ -250,48 +232,6 @@ def main():
                     print("No record for " + str(carth_id))
                     print("Insert")
                     fn_insert_local(i)
-
-                #     connection.cursor.close()
-
-                    # if data_result == 0 or data_result is None:
-                    #     print("insert")
-                    # else:
-                    #     print("update")
-
-                # # For testing and development...
-                # ins_sql = '''INSERT INTO cx_sandbox:raisers_edge_id_match
-                #            (id, re_id, fullname, category, value, date_added,
-                #            date_updated, comment)
-                #            VALUES(?,?,?,?,?,?,?,?)'''
-                # ins_args = (carth_id, bb_id, name, 'Student Status', type,
-                #             '2019-11-13', '2019-11-21', 'Testing an add')
-                #
-                # print(ins_sql)
-                # print(ins_args)
-
-                # try:
-                #     cursor = connection.cursor()
-                #     # print(connection)
-                #     cursor.execute(ins_sql, ins_args)
-                #     # with connection:
-                #     #     xsql(ins_sql, ins_args)
-                #
-                # # except connection.cursor.IntegrityError as e:
-                # except Exception as e:
-                #     print("Error {} ".format(e) )
-                # # print(str(sys.exc_info()[:2]))
-
-        # with connection:
-        #     data_result = xsql(
-        #         ins_sql, connection,
-        #         key=settings.INFORMIX_DEBUG
-        #     ).fetchall()
-
-        # ret = list(data_result)
-        # for i in ret:
-        #     print(str(i[0]) + " " + i[1] + " " + i[5])
-
-
 
     except Exception as e:
         print("Error in main:  " + str(e))
