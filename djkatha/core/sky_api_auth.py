@@ -7,6 +7,7 @@ import django
 
 # import time
 # import datetime
+import datetime as dt
 from datetime import datetime
 
 # Note to self, keep this here
@@ -22,15 +23,15 @@ urlSafeEncodedBytes = base64.urlsafe_b64encode(AUTHORIZATION.encode("utf-8"))
 urlSafeEncodedStr = str(urlSafeEncodedBytes)
 
 
-def token_refresh():
-    print("In token_refresh")
+def fn_token_refresh():
+    # print("In token_refresh")
     try:
         # Generates a new OAUTH2 access token and refresh token using
         # the current (unexpired) refresh token. Writes updated tokens
         # to appropriate files for subsequent reference
         # :return: Tuple containing (return_code, access_token, refresh_token)
         refresh_token = cache.get('refreshkey')
-        print(refresh_token)
+        # print(refresh_token)
         ref_token_call = requests.post(
             url='https://oauth2.sky.blackbaud.com/token',
             headers={'Content-Type': 'application/x-www-form-urlencoded'},
@@ -70,9 +71,57 @@ def token_refresh():
         else:
             print('ERROR:  ' + str(status) + ":" + response)
             return 0
-
     except Exception as e:
         print("Error in token_refresh:  " + e.message)
-        # fn_write_error("Error in misc_fees.py - Main: "
+        # fn_write_error("Error in fn_do_token.py - Main: "
         #                + e.message)
         return 0
+
+def fn_do_token():
+    """--------REFRESH THE TOKEN------------------"""
+    """ Because the token only lasts for 60 minutes when things are idle
+        it will be necessary to refresh the token before attempting
+        anything else.   The refresh token will be valid for 60 days,
+        so it should return a new token with no problem.  All the API
+        calls will get new tokens, resetting the 60 minute clock, 
+        so to avoid calling for a token every time, I may have to 
+        either set a timer or see if I can read the date and time from the
+        cache files and compare to current time
+     """
+    try:
+        """Check to see if the token has expired, if so refresh it
+            the token expires in 60 minutes, but the refresh token
+            is good for 60 days"""
+        t = cache.get('refreshtime')
+        print(t)
+
+        if t is None:
+            r = fn_token_refresh()
+            print(r)
+        elif t < datetime.now() - dt.timedelta(minutes=59):
+            print('Out of limit')
+            print(t)
+            print(datetime.now() - dt.timedelta(minutes=59))
+            r = fn_token_refresh()
+            print(r)
+        else:
+            print("within limit")
+
+        """"--------GET THE TOKEN------------------"""
+        current_token = cache.get('tokenkey')
+        # print("Current Token = ")
+        # print(current_token)
+        return current_token
+
+    except Exception as e:
+        print("Error in fn_do_token:  " + e.message)
+        # fn_write_error("Error in fn_do_token.py - Main: "
+        #                + e.message)
+        return 0
+
+# def main():
+#     x = fn_do_token()
+#     print("Return = " + str(x))
+#
+# main()
+
