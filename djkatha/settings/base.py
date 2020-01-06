@@ -80,7 +80,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'django.contrib.staticfiles',
     'djkatha.core',
-    'djsapo.dashboard',
+    # 'djsapo.dashboard',
     # needed for template tags
     'djtools',
 ]
@@ -130,16 +130,16 @@ TEMPLATES = [
 # caching
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+        # 'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
         #'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
         #'LOCATION': '127.0.0.1:11211',
-        #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        #'LOCATION': '/var/tmp/django_djkatha_cache',
-        #'TIMEOUT': 60*20,
-        #'KEY_PREFIX': 'djkatha_',
-        #'OPTIONS': {
-        #    'MAX_ENTRIES': 80000,
-        #}
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': '/var/tmp/django_djkatha_cache',
+        'TIMEOUT': None,
+        'KEY_PREFIX': 'djkatha_',
+        'OPTIONS': {
+           'MAX_ENTRIES': 80000,
+        }
     }
 }
 CACHE_MIDDLEWARE_ANONYMOUS_ONLY = True
