@@ -20,6 +20,9 @@ import django
 import os.path
 import csv
 import argparse
+import mysql.connector
+import pyodbc
+
 
 # Note to self, keep this here
 # django settings for shell environment
@@ -41,7 +44,7 @@ os.environ['INFORMIXSQLHOSTS'] = settings.INFORMIXSQLHOSTS
 # ________________
 from django.conf import settings
 from django.core.cache import cache
-from djkatha.core.sky_api_auth import token_refresh
+from djkatha.core.sky_api_auth import fn_do_token
 from djkatha.core.sky_api_calls import api_get, get_const_custom_fields, \
     get_constituent_id, set_const_custom_field, update_const_custom_fields, \
     delete_const_custom_fields, get_relationships, api_post, api_patch, \
@@ -80,21 +83,20 @@ parser.add_argument(
 
 """
     The process would have to involve 
-    1. Make a call to API periodically to populate local table with BB ID and
-        the custom status flag
-    2. finding the status of students in CX, 
-        (Look for a change date in audit table)
-    3.Then determine if the students with recent changes are in Raiser's Edge
-         ***WIll it be possible to have a student in RE w/o a status code?***
-         ***Only if student was added as a constituent and not a student***
-         ***If so, my table of existing students may be less than perfect***
+    1. Find the status of students in CX, (Look for a change date in 
+        audit table)
+    2.Then determine if the students with recent changes are in Raiser's Edge
+        ***WIll it be possible to have a student in RE w/o a status code?***
+        ***Only if student was added as a constituent and not a student***
+        ***If so, my table of existing students may be less than perfect***
          
-         3a  Look for student in my table with cx and BB id numbers
-         3b  If not found, make API call to look for student NOT using status 
+        3a  Look for student in my table with cx and BB id numbers
+        3b  If not found, make API call to look for student NOT using status 
             as a filter
-         3c If not in BB data, add student  
+        3c If not in BB data pass on the record...will use O-matic to 
+           add new students three times a year
     4 If student was in table, update the custom field
-       else If student was just added to BB, add the custom field
+        else If student was just added to BB, add the custom field
             Finally, add student to the local table if new
     --
     No way to test any of this because there are no students in RE yet...
@@ -112,8 +114,9 @@ def main():
             EARL = settings.INFORMIX_ODBC_TRAIN
         if database == 'train':
             EARL = settings.INFORMIX_ODBC_TRAIN
-        if database == 'sandbox':
-            EARL = settings.INFORMIX_ODBC_SANDBOX
+        # if database == 'sandbox':
+        #     EARL = settings.INFORMIX_ODBC_SANDBOX
+
         else:
             # # this will raise an error when we call get_engine()
             # below but the argument parser should have taken
@@ -121,61 +124,33 @@ def main():
             EARL = None
         # establish database connection
 
-        # for now, possible actions include get_id = which will bypass
-        # all the others, set_status, update_status, delete_field,
-        # get_relationships
+        '''For now, possible actions include get_id = which will bypass
+          all the others, set_status, update_status, delete_field,
+          get_relationships'''
 
-        # Steve set up something - have to figure out how to call it...
+        '''Steve set up something - have to figure out how to call it...'''
         # print(settings.DATABASES)
         # connect = get_connection(settings.DATABASES)
         # cursor = connect.cursor()  # get the cursor
         # cursor.execute("USE default")  # select the database
         # cursor.execute(
-        #     "SHOW TABLES")  # execute 'SHOW TABLES' (but data is not returned)
+        #   "SHOW TABLES")  # execute 'SHOW TABLES' (but data is not returned)
 
         action = ''
         # action = 'set_status'
         # action = 'update_status'
 
-        """--------REFRESH THE TOKEN------------------"""
-        """ Because the token only lasts for 60 minutes when things are idle
-            it will be necessary to refresh the token before attempting
-            anything else.   The refresh token will be valid for 60 days,
-            so it should return a new token with no problem.  All the API
-            calls will get new tokens, resetting the 60 minute clock, 
-            so to avoid calling for a token every time, I may have to 
-            either set a timer or see if I can read the date and time from the
-            cache files and compare to current time
-         """
-
-
-
-        """Check to see if the token has expired, if so refresh it
-            the token expires in 60 minutes, but the refresh token
-            is good for 60 days"""
-        t = cache.get('refreshtime')
-        if t is None:
-            r = token_refresh()
-        elif t < datetime.now() - dt.timedelta(minutes=59):
-            # print('Out of token refresh limit')
-            # print(t)
-            # print(datetime.now() - dt.timedelta(minutes=59))
-            r = token_refresh()
-            # print(r)
-
-
-        else:
-            # print("within token refresh limit")
-            pass
-
         """"--------GET THE TOKEN------------------"""
-        current_token = cache.get('tokenkey')
+        current_token = fn_do_token()
         # print("Current Token = ")
         # print(current_token)
 
+        """
+           -----------------------------------------------------------
+           --------GET STUDENTS WITH A STATUS CHANGE -----------------
+           -----------------------------------------------------------
+        """
 
-        """ --------GET STUDENTS WITH A STATUS CHANGE -----------------"""
-        """        """
         statquery = '''select O.id, O.acst, O.audit_event, O.audit_timestamp,
             N.id, N.acst, N.audit_event, N.audit_timestamp
             from cars_audit:prog_enr_rec N
@@ -184,8 +159,8 @@ def main():
             and O.acst != N.acst
             and O.audit_event = 'BU'
             where N.audit_event != 'BU'
-            and N.audit_timestamp > TODAY - 1 
-            and N.audit_timestamp = O.audit_timestamp  
+            and N.audit_timestamp > TODAY - 15
+            and N.audit_timestamp = O.audit_timestamp
             '''
 
         connection = get_connection(EARL)
@@ -195,53 +170,137 @@ def main():
                 key=settings.INFORMIX_DEBUG
             ).fetchall()
 
+        ret = list(data_result)
 
-        # ret = list(data_result)
         # for i in ret:
         #     print(str(i[0]) + " " + i[1] + " " + i[5])
-            # Look for student and status in local table
-            # Else look for student and status at BB via API
-            # Add to BB if necessary
-            # Add or update status in BB
-            # Update local table if necessary
+        # carth_id = i[0]
 
+        carth_id = 273530
+        """
+           -----------------------------------------------------------
+           --------FIND ID IN LOCAL TABLE ---------- -----------------
+           -----------------------------------------------------------
 
-        """ --------GET THE BLACKBAUD CONSTITUENT ID-----------------"""
-        """ I will either have a list of students in a csv file or possibly
-            in  a to be determined database
-            That way I can get the blackbaud internal id en masse and
-            not need to make multiple calls based on the carthage ID
-            I may also look to see if the student status has changed in 
-            CX
+          Look for student and status in local table
+          Else look for student and status at BB via API
+          Add to BB if necessary
+          Add or update status in BB
+          Update local table if necessary
         """
 
-        # #----------------------------------------
-        # with open("id_list.csv", 'r') as id_lst:
-        #     reed = csv.reader(id_lst, delimiter=',')
-        #     for row in reed:
-        #         # print(row)
-        #         const_id = row[1]
+        """ --------GET THE BLACKBAUD CONSTITUENT ID-----------------"""
+        '''THIS WILL BE THE CORRECT QUERY..'''
+        chk_sql = '''select re_id from
+            cx_sandbox:raisers_edge_id_match
+            where id = {}'''.format(carth_id)
+        print(chk_sql)
+
+        connection = get_connection(EARL)
+        with connection:
+            data_result = xsql(chk_sql)
+            # print("Query result = " + str(data_result))
+# ?            if data_result:
+            for row in data_result:
+
+                if row[0] is not None:
+                    const_id = row[0]
+                    category = 'Student Status'
+                    ret = get_const_custom_fields(current_token, const_id,
+                                                  category)
+                    print(ret)
+                    item_id = ret
+
+                    comment = 'Test 110319'
+                    valu = 'Not a Student'
+
+                    print("Record exists for " + str(carth_id))
+                    ret = update_const_custom_fields(
+                         current_token, item_id, comment, valu)
+                    print(ret)
+                else:
+                    print("No record for " + str(carth_id))
+
+        """
+            **************************************
+            **************************************
+            **************************************
+            Here I need to get the local database stuff added
+        """
+
+        # print(settings.SERVER_URL)
+        # print(settings.DATABASES['default']['NAME'])
+        # nm = settings.DATABASES['default']['NAME']
+        # print(settings.MSSQL_EARL)
+        # # try:
+        # userID = 'brahman'
+
+        # """This works if I can figure out how to find the right
+        #     table and schema"""
+        # cnxn = pyodbc.connect(settings.MSSQL_EARL)
+        # for SQLServer, you must use single quotes in the SQL incantation,
+        # otherwise it barfs for some reason
+        # sql = "SELECT * FROM fwk_user"
+        # sql = "SELECT table_name FROM information_schema.tables"
+              # "WHERE table_schema = " + nm
+        # table_schema
+        # sql = "select  table_name from " \
+        #       "information_schema.tables where table_type = 'BASE TABLE' " \
+        #       "and table_schema not in ('information_schema','mysql', " \
+        #       "'performance_schema','sys') order by table_name;"
+
+        # cursor.execute(sql)
+        # rows = cursor.fetchall()
+        # cursor.close()
+        # # return row[5]
+        # for i in rows:
+        #     print(i)
+        # except:
+        #     return None
+
+        # try:
+        #     cnx = mysql.connector.connect(
+        #                     user=settings.DATABASES['default']['USER'],
+        #                     password=settings.DATABASES['default']['PASSWORD'],
+        #                     host=settings.DATABASES['default']['HOST'],
+        #                     database=settings.DATABASES['default']['NAME']
+        #                     )
         #
-        # # # # First, we have to get the internal ID from blackbaud for
-        # # # the constituent
-        # # const_id = get_constituent_id(current_token, 1534657)
-        # print("Constituent id = " + str(const_id))
+        # except Exception as e:
+        #     # if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+        #     #     print("Something is wrong with your user name or password")
+        #     # elif err.errno == errorcode.ER_BAD_DB_ERROR:
+        #     #     print("Database does not exist")
+        #     # else:
+        #     print(str(e))
+        # else:
+        #     cnx.close()
 
+        """
+           
+             For testing and development...
+                 qry = "INSERT INTO cx_sandbox:raisers_edge_id_match
+                 (id, re_id, fullname, category, value, date_added, 
+                 date_updated, comment)
+                 VALUES 
+                 (1534657, 20369, 'Bob Amico', 'Student Status', 
+                 'Administrator', 
+                 '2019-11-13', '2019-11-21', 'Testing an add');"
+                connection = get_connection(EARL)
+                with connection:
+                result = xsql(qry, connection,
+                key=settings.INFORMIX_DEBUG
+                 ).execute
+         """
 
+        """------GET CUSTOM FIELDS FOR A CONSTITUENT----------"""
+        # Also need to check to see if the custom field exists
+        # Does not appear we can filter by category or type...WHY???
+        # NEED TO GRAB THE ITEM ID FROM THE SPECIFIC CUSTOM FIELD
+        # NOTE:  There seems to be a delay between successfully creating a
+        # custom field value and being able to retrieve it for the student
 
-        # """------GET CUSTOM FIELDS FOR A CONSTITUENT----------"""
-        # # Also need to check to see if the custom field exists
-        # # Does not appear we can filter by category or type...WHY???
-        # # NEED TO GRAB THE ITEM ID FROM THE SPECIFIC CUSTOM FIELD
-        # # NOTE:  There seems to be a delay between successfully creating a
-        # # custom field value and being able to retrieve it for the student
-        # category = 'Student Status'
-        # ret = get_const_custom_fields(current_token, const_id, category)
-        # # print(ret)
-        # item_id = ret
-        # # print("Item ID = " + str(item_id))
-        #
-        # """
+        """
         # --------------------------
         # Here we will need some logic.
         # API options are POST, PATCH, DELETE
@@ -255,7 +314,7 @@ def main():
         #     """-----POST-------"""
         #     # Then we can deal with the custom fields...
         #     comment = 'Testing an add'
-        #     val = 'Administrator'
+        #     val = 'Active Student'
         #     category = 'Student Status'
         #     ret = set_const_custom_field(current_token, const_id, val,
         #                                  category, comment)
@@ -275,11 +334,7 @@ def main():
         #     ret = update_const_custom_fields(current_token, item_id, comment,
         #                                      valu)
         #     print(ret)
-        #
-        # # """ --------These are generic and not specific to a constituent---"""
-        # # ret = get_custom_fields(current_token)
-        # # ret = get_custom_field_value(current_token, 'Involvment')
-        # #----------------------------------------
+
 
     except Exception as e:
         print("Error in main:  " + str(e))
