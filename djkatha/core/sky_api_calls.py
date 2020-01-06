@@ -206,6 +206,27 @@ def get_relationships(current_token, id):
         return 0
 
 
+def get_relationship_types(current_token):
+    urlst = 'https://api.sky.blackbaud.com/constituent/v1/relationshiptypes'
+
+    try:
+        x = api_get(current_token, urlst)
+        if x == 0:
+            print("NO DATA")
+            return 0
+        else:
+            for i in x['value']:
+                print(i)
+            return 1
+
+    except Exception as e:
+        print("Error in get_relationships:  " + e.message)
+        # fn_write_error("Error in misc_fees.py - Main: "
+        #                + e.message)
+        return 0
+
+
+
 def get_custom_fields(current_token):
     urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents/' \
             'customfields/categories/details'
@@ -272,11 +293,43 @@ def get_constituent_id(current_token, carthid):
         return 0
 
 
+def get_constituent_custom_fields(current_token, bb_id):
+    urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents/' \
+            + bb_id + '/customfields'
+    try:
+        x = api_get(current_token, urlst)
+        if x == 0:
+            print("NO DATA")
+            return 0
+        else:
+            # with open("id_list.csv", 'w') as id_lst:
+            #     for i in x['value']:
+            print(x)
+            #     #     print(i['id'])
+            #         bb_id = i['id']
+            #         carth_id = i['lookup_id']
+            #         name = i['name']
+            #         type = i['type']
+            #         if type == 'Individual':
+            #             # print('Name = ' + name + ', CarthID = ' + str(carth_id)
+            #             #   + ', BlackbaudID = ' + str(bb_id) + ', type = '
+            #             #   + type)
+            #             csvwriter = csv.writer(id_lst, quoting=csv.QUOTE_NONE)
+            #             csvwriter.writerow([carth_id, bb_id, name, type])
+            # return 1
+            return x
+    except Exception as e:
+        print("Error in get_constituent_id:  " + e.message)
+        # fn_write_error("Error in get_constituent_id.py - Main: "
+        #                + e.message)
+        return 0
+
+
 def get_constituent_list(current_token):
     try:
 
         urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents?' \
-                'custom_field_category=Student Status' \
+                    'custom_field_category=Student Status' \
                 '&date_added>2019-11-13T10:59:03.761-05:00&limit=10'
         # urlst =  'https://api.sky.blackbaud.com/constituent/v1/constituents/' \
         #          'search?search_text=' + str(carthid) \
@@ -287,22 +340,22 @@ def get_constituent_list(current_token):
             print("NO DATA")
             return 0
         else:
-            with open("id_list.csv", 'w') as id_lst:
-                for i in x['value']:
-                # print(x)
-                #     print(i['id'])
-                    bb_id = i['id']
-                    carth_id = i['lookup_id']
-                    name = i['name']
-                    type = i['type']
-                    if type == 'Individual':
-                        # print('Name = ' + name + ', CarthID = ' + str(carth_id)
-                        #   + ', BlackbaudID = ' + str(bb_id) + ', type = '
-                        #   + type)
-                        csvwriter = csv.writer(id_lst, quoting=csv.QUOTE_NONE)
-                        csvwriter.writerow([carth_id, bb_id, name, type])
-            return 1
-
+            # with open("id_list.csv", 'w') as id_lst:
+            #     for i in x['value']:
+            #     # print(x)
+            #     #     print(i['id'])
+            #         bb_id = i['id']
+            #         carth_id = i['lookup_id']
+            #         name = i['name']
+            #         type = i['type']
+            #         if type == 'Individual':
+            #             # print('Name = ' + name + ', CarthID = ' + str(carth_id)
+            #             #   + ', BlackbaudID = ' + str(bb_id) + ', type = '
+            #             #   + type)
+            #             csvwriter = csv.writer(id_lst, quoting=csv.QUOTE_NONE)
+            #             csvwriter.writerow([carth_id, bb_id, name, type])
+            # return 1
+            return x
     except Exception as e:
         print("Error in get_constituent_id:  " + e.message)
         # fn_write_error("Error in get_constituent_id.py - Main: "
@@ -371,11 +424,11 @@ def set_const_custom_field(current_token, id, value, category, comment):
 
     print(urlst, body)
 
-    x = api_post(current_token, urlst, body)
-    if x == 0:
-        print("Post Failure")
-        return 0
-    else:
-        return 1
+    # x = api_post(current_token, urlst, body)
+    # if x == 0:
+    #     print("Post Failure")
+    #     return 0
+    # else:
+    #     return 1
 
 
