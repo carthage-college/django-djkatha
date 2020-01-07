@@ -15,13 +15,15 @@ import json
 import time
 import base64
 import datetime as dt
-from datetime import datetime
+from datetime import datetime, timezone
 import django
 import os.path
 import csv
 import argparse
 import mysql.connector
 import pyodbc
+import arrow
+
 
 
 # Note to self, keep this here
@@ -52,22 +54,12 @@ from djkatha.core.sky_api_calls import api_get, get_const_custom_fields, \
 
 from djimix.core.utils import get_connection, xsql
 
-# from djzbar.utils.informix import get_engine
-# from djzbar.utils.informix import do_sql
-# from djzbar.settings import INFORMIX_EARL_SANDBOX
-# from djzbar.settings import INFORMIX_EARL_TEST
-# from djzbar.settings import INFORMIX_EARL_PROD
-# from djtools.fields import TODAY
-
 # normally set as 'debug" in SETTINGS
 DEBUG = settings.INFORMIX_DEBUG
 desc = """
     Collect data from Blackbaud
 """
 parser = argparse.ArgumentParser(description=desc)
-
-# Test with this then remove, use the standard logging mechanism
-# logger = logging.getLogger(__name__)
 
 parser.add_argument(
     "--test",
@@ -147,79 +139,115 @@ def main():
 
         """
            -----------------------------------------------------------
-           --------GET STUDENTS WITH A STATUS CHANGE -----------------
+           ---GET STUDENTS WITH A STATUS CHANGE FROM PROG_ENR_REC-----
            -----------------------------------------------------------
         """
 
-        statquery = '''select O.id, O.acst, O.audit_event, O.audit_timestamp,
-            N.id, N.acst, N.audit_event, N.audit_timestamp
-            from cars_audit:prog_enr_rec N
-            left join cars_audit:prog_enr_rec O
-            on O.id = N.id
-            and O.acst != N.acst
-            and O.audit_event = 'BU'
-            where N.audit_event != 'BU'
-            and N.audit_timestamp > TODAY - 15
-            and N.audit_timestamp = O.audit_timestamp
-            '''
+        # for real..
+        # statquery = '''select O.id, O.acst, O.audit_event, O.audit_timestamp,
+        #     N.id, N.acst, N.audit_event, N.audit_timestamp
+        #     from cars_audit:prog_enr_rec N
+        #     left join cars_audit:prog_enr_rec O
+        #     on O.id = N.id
+        #     and O.acst != N.acst
+        #     and O.audit_event = 'BU'
+        #     where N.audit_event != 'BU'
+        #     and N.audit_timestamp > TODAY - 15
+        #     and N.audit_timestamp = O.audit_timestamp
+        #     '''
+
+        # for testing...
+        statquery = '''select PER.id, PER.acst, AST.txt 
+            from prog_enr_rec PER
+            JOIN acad_stat_table AST
+            on AST.acst = PER.acst
+            where PER.id in (267310)'''
+            # (select id from cx_sandbox:raisers_edge_id_match) '''
+        # print(statquery)
 
         connection = get_connection(EARL)
         with connection:
-            data_result = xsql(
-                statquery, connection,
-                key=settings.INFORMIX_DEBUG
-            ).fetchall()
+            data_result = xsql(statquery).fetchall()
+            ret = list(data_result)
+            for i in ret:
+                print(str(i[0]) + " " + i[1])
+                carth_id = i[0]
+                acad_stat = i[2]
 
-        ret = list(data_result)
+                # carth_id = 273530
+                # # carth_id = 1524365
 
-        # for i in ret:
-        #     print(str(i[0]) + " " + i[1] + " " + i[5])
-        # carth_id = i[0]
+                """
+                   -----------------------------------------------------------
+                   ---FIND RAISERS EDGE ID IN LOCAL TABLE --------------------
+                   -----------------------------------------------------------
+        
+                  Look for student and status in local table
+                  Else look for student and status at BB via API
+                  Add to BB if necessary (THIS WILL BE DONE BY OMATIC)
+                  Add or update status in BB
+                  Update local table if necessary
+                """
+                """1. Look for id in local table"""
+                # initialize bb_id
+                bb_id = 0
+                chk_sql = '''select re_id from
+                    cx_sandbox:raisers_edge_id_match
+                    where id = {}'''.format(carth_id)
+                # print(chk_sql)
+                connection = get_connection(EARL)
+                with connection:
+                    data_result = xsql(chk_sql).fetchall()
 
-        carth_id = 273530
-        """
-           -----------------------------------------------------------
-           --------FIND ID IN LOCAL TABLE ---------- -----------------
-           -----------------------------------------------------------
+                    ret = list(data_result)
+                    if ret:
+                        for j in ret:
+                            bb_id = j[0]
+                            print(bb_id)
 
-          Look for student and status in local table
-          Else look for student and status at BB via API
-          Add to BB if necessary
-          Add or update status in BB
-          Update local table if necessary
-        """
+                    else:
+                        # Go to the API to see if student is there?
+                        print("No bb_id stored locally")
+                        bb_id = get_constituent_id(current_token, carth_id)
+                        print(bb_id)
 
-        """ --------GET THE BLACKBAUD CONSTITUENT ID-----------------"""
-        '''THIS WILL BE THE CORRECT QUERY..'''
-        chk_sql = '''select re_id from
-            cx_sandbox:raisers_edge_id_match
-            where id = {}'''.format(carth_id)
-        print(chk_sql)
+                    if bb_id != 0:
+                        '''We have to make a call to get the internal id for
+                           the custom field entry, then use that to reset it 
+                        '''
+                        ret = get_const_custom_fields(current_token, bb_id,
+                                                      'Student Status')
+                        print(ret)
 
-        connection = get_connection(EARL)
-        with connection:
-            data_result = xsql(chk_sql)
-            # print("Query result = " + str(data_result))
-# ?            if data_result:
-            for row in data_result:
+                        print("set custom fields: " + str(carth_id) + ", "
+                              + acad_stat)
+                        # ret = update_const_custom_fields(current_token,
+                        #                                  str(ret),
+                        #                                  'Test', acad_stat)
+                        # print(ret)
+                    else:
+                        print("Nobody home")
 
-                if row[0] is not None:
-                    const_id = row[0]
-                    category = 'Student Status'
-                    ret = get_const_custom_fields(current_token, const_id,
-                                                  category)
-                    print(ret)
-                    item_id = ret
 
-                    comment = 'Test 110319'
-                    valu = 'Not a Student'
 
-                    print("Record exists for " + str(carth_id))
-                    ret = update_const_custom_fields(
-                         current_token, item_id, comment, valu)
-                    print(ret)
-                else:
-                    print("No record for " + str(carth_id))
+            # for row in data_result:
+                # if row[0] is not None:
+                #     const_id = row[0]
+                #     category = 'Student Status'
+                #     ret = get_const_custom_fields(current_token, const_id,
+                #                                   category)
+                #     print(ret)
+                #     item_id = ret
+                #
+                #     comment = 'Test 110319'
+                #     valu = 'Not a Student'
+                #
+                #     print("Record exists for " + str(carth_id))
+                #     ret = update_const_custom_fields(
+                #          current_token, item_id, comment, valu)
+                #     print(ret)
+                # else:
+                #     print("No record for " + str(carth_id))
 
         """
             **************************************
