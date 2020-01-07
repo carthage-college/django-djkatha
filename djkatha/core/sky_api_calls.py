@@ -9,6 +9,7 @@ import time
 import datetime
 import django
 import csv
+import arrow
 
 from datetime import datetime
 # Note to self, keep this here
@@ -50,12 +51,15 @@ def api_get(current_token, url):
             else:
                 #     if response_dict['count'] == 0:
                 response_dict = json.loads(response.text)
-                return response_dict
+                if response_dict['count'] == 0:
+                    return 0
+                else:
+                    return response_dict
 
     except Exception as e:
-        print("Error in api_get:  " + e.message)
+        print("Error in api_get:  " + str(e))
         # fn_write_error("Error in api_get - Main: "
-        #                + e.message)
+        #                + str(e))
         return 0
 
 
@@ -80,9 +84,9 @@ def api_post(current_token, url, data):
 
         return status
     except Exception as e:
-        print("Error in api_post:  " + e.message)
+        print("Error in api_post:  " + str(e))
         # fn_write_error("Error in api_post.py - Main: "
-        #                + e.message)
+        #                + str(e))
         return 0
 
 
@@ -107,9 +111,9 @@ def api_patch(current_token, url, data):
 
         return status
     except Exception as e:
-        print("Error in api_patch:  " + e.message)
+        print("Error in api_patch:  " + str(e))
         # fn_write_error("Error in api_patch.py - Main: "
-        #                + e.message)
+        #                + str(e))
         return 0
 
 
@@ -130,14 +134,14 @@ def api_delete(current_token, url):
 
         return status
     except Exception as e:
-        print("Error in api_delete:  " + e.message)
+        print("Error in api_delete:  " + str(e))
         # fn_write_error("Error in api_delete.py - Main: "
-        #                + e.message)
+        #                + str(e))
         return 0
 
 
 def get_const_custom_fields(current_token, id, category):
-    print("In get_const_custom_fields")
+    # print("In get_const_custom_fields")
     try:
         urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents/' \
                 + str(id) + '/customfields'
@@ -155,11 +159,11 @@ def get_const_custom_fields(current_token, id, category):
                 if i['category'] == category:
                     item_id = i['id']
                     print("ID = " + i['id'])
-                    print("Category = " + i['category'])
-                    # if 'comment' not in x['value']:
-                    #     print("Comment not entered")
-                    # else:
-                    #     print("Comment = " + str(i['comment']))
+                    # print("Category = " + i['category'])
+                    if 'comment' not in x['value']:
+                        print("Comment not entered")
+                    else:
+                        print("Comment = " + str(i['comment']))
                     # print("Date = " + i['date'])
                     print("Date Added = " + i['date_added'])
                     print("Date Modified = " + i['date_modified'])
@@ -169,9 +173,9 @@ def get_const_custom_fields(current_token, id, category):
                     return item_id
 
     except Exception as e:
-        print("Error in get_const_custom_fields:  " + e.message)
+        print("Error in get_const_custom_fields:  " + str(e))
         # fn_write_error("Error in misc_fees.py - Main: "
-        #                + e.message)
+        #                + str(e))
         return 0
 
 
@@ -200,9 +204,9 @@ def get_relationships(current_token, id):
                 # print(i['start'])
             return 1
     except Exception as e:
-        print("Error in get_relationships:  " + e.message)
+        print("Error in get_relationships:  " + str(e))
         # fn_write_error("Error in misc_fees.py - Main: "
-        #                + e.message)
+        #                + str(e))
         return 0
 
 
@@ -220,9 +224,9 @@ def get_relationship_types(current_token):
             return 1
 
     except Exception as e:
-        print("Error in get_relationships:  " + e.message)
+        print("Error in get_relationships:  " + str(e))
         # fn_write_error("Error in misc_fees.py - Main: "
-        #                + e.message)
+        #                + str(e))
         return 0
 
 
@@ -259,9 +263,9 @@ def get_custom_field_value(current_token, category):
                 # print(i)
             return 1
     except Exception as e:
-        print("Error in get_custom_field_value:  " + e.message)
+        print("Error in get_custom_field_value:  " + str(e))
         # fn_write_error("Error in misc_fees.py - Main: "
-        #                + e.message)
+        #                + str(e))
         return 0
 
 
@@ -273,11 +277,10 @@ def get_constituent_id(current_token, carthid):
 
         x = api_get(current_token, urlst)
         if x == 0:
-            print("NO DATA")
+            # print("NO DATA")
             return 0
         else:
             for i in x['value']:
-            # print(x)
                 print(i['id'])
                 id = i['id']
                 print(i['name'])
@@ -287,9 +290,9 @@ def get_constituent_id(current_token, carthid):
             return id
 
     except Exception as e:
-        print("Error in get_constituent_id:  " + e.message)
+        print("Error in get_constituent_id:  " + str(e))
         # fn_write_error("Error in get_constituent_id.py - Main: "
-        #                + e.message)
+        #                + str(e))
         return 0
 
 
@@ -319,9 +322,9 @@ def get_constituent_custom_fields(current_token, bb_id):
             # return 1
             return x
     except Exception as e:
-        print("Error in get_constituent_id:  " + e.message)
+        print("Error in get_constituent_id:  " + str(e))
         # fn_write_error("Error in get_constituent_id.py - Main: "
-        #                + e.message)
+        #                + str(e))
         return 0
 
 
@@ -357,9 +360,9 @@ def get_constituent_list(current_token):
             # return 1
             return x
     except Exception as e:
-        print("Error in get_constituent_id:  " + e.message)
+        print("Error in get_constituent_id:  " + str(e))
         # fn_write_error("Error in get_constituent_id.py - Main: "
-        #                + e.message)
+        #                + str(e))
         return 0
 
 def delete_const_custom_fields(current_token, itemid):
@@ -376,9 +379,9 @@ def delete_const_custom_fields(current_token, itemid):
             return 0
 
     except Exception as e:
-        print("Error in delete_const_custom_fields:  " + e.message)
+        print("Error in delete_const_custom_fields:  " + str(e))
         # fn_write_error("Error in delete_const_custom_fields ")
-        #                + e.message)
+        #                + str(e))
         return 0
 
 
@@ -388,13 +391,20 @@ def update_const_custom_fields(current_token, itemid, comment, val):
         urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents/' \
                 'customfields/' + itemid
 
-        now = datetime.now()
-        date_time = now.strftime("%Y-%m-%dT%H:%M:%S")
+        # now = datetime.now()
+        # date_time = now.strftime("%Y-%m-%dT%H:%M:%S")
 
-        body = {"comment": comment, "date_modified": "2019-11-13T01:25:00",
-                "date": "2019-11-12T01:25:00", "value": val}
+        utc = arrow.utcnow()
+        print(utc.to('US/Eastern'))
+        date_time = utc.to('US/Eastern')
+        print(str(date_time))
+        dat = str(date_time)
 
-        print(urlst, body)
+
+        body = {"comment": comment, "date_modified": dat,
+                "date": dat, "value": val}
+
+        # print(urlst, body)
         x = api_patch(current_token, urlst, body)
         if x == 0:
             print("Patch Failure")
@@ -404,9 +414,9 @@ def update_const_custom_fields(current_token, itemid, comment, val):
 
 
     except Exception as e:
-        print("Error in update_const_custom_fields:  " + e.message)
+        print("Error in update_const_custom_fields:  " + str(e))
         # fn_write_error("Error in update_const_custom_fields ")
-        #                + e.message)
+        #                + str(e))
         return 0
 
 
@@ -415,8 +425,12 @@ def set_const_custom_field(current_token, id, value, category, comment):
     urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents/' \
             'customfields'
 
-    now = datetime.now()
-    date_time = now.strftime("%Y-%m-%dT%H:%M:%S")
+    # now = datetime.now()
+    # date_time = now.strftime("%Y-%m-%dT%H:%M:%S")
+
+    utc = arrow.utcnow()
+    print(utc.to('US/Eastern'))
+    date_time = utc.to('US/Eastern')
 
     # Constituent ID is passed in as Parent ID
     body = {'category': category, 'comment': comment, 'date': date_time,
