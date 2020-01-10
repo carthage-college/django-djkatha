@@ -119,34 +119,34 @@ def fn_convert_date(date):
     return retdate
 
 
-def fn_insert_local(i):
-
-    try:
-        if i['type'] == 'Individual':
-            fullname = i['first'].strip() + ' ' + i['last'].strip()
-            id = i['lookup_id']
-            bbid = i['id']
-            typ = i['type']
-
-            q_ins_sql = '''INSERT INTO cx_sandbox:raisers_edge_id_match 
-                (id, re_id, fullname, category, const_type) 
-                VALUES(?, ?, ?, ?, ?)'''
-
-            q_ins_args = (id, bbid,  fullname, 'Student Status',
-                          typ)
-
-            print(q_ins_sql)
-            print(q_ins_args)
-            connection = get_connection(EARL)
-            with connection:
-                cur = connection.cursor()
-                cur.execute(q_ins_sql, q_ins_args)
-                # connection.commit()
-
-    except pyodbc.Error as err:
-        # print("Error in fn_insert_local:  " + str(err))
-        sqlstate = err.args[0]
-        print(sqlstate)
+# def fn_insert_local(i):
+#
+#     try:
+#         if i['type'] == 'Individual':
+#             fullname = i['first'].strip() + ' ' + i['last'].strip()
+#             id = i['lookup_id']
+#             bbid = i['id']
+#             typ = i['type']
+#
+#             q_ins_sql = '''INSERT INTO cx_sandbox:cvid_rec
+#                 (id, re_id, fullname, category, const_type)
+#                 VALUES(?, ?, ?, ?, ?)'''
+#
+#             q_ins_args = (id, bbid,  fullname, 'Student Status',
+#                           typ)
+#
+#             print(q_ins_sql)
+#             print(q_ins_args)
+#             # connection = get_connection(EARL)
+#             # with connection:
+#             #     cur = connection.cursor()
+#             #     cur.execute(q_ins_sql, q_ins_args)
+#             #     # connection.commit()
+#
+#     except pyodbc.Error as err:
+#         # print("Error in fn_insert_local:  " + str(err))
+#         sqlstate = err.args[0]
+#         print(sqlstate)
 
 
 def fn_update_local(i):
@@ -160,11 +160,15 @@ def fn_update_local(i):
             print('UPDATE: Name = ' + name + ', CarthID = ' + str(carth_id)
             + ', BlackbaudID = ' + str(bb_id) + ', type = '
             + type)
-        q_upd_sql = '''UPDATE cx_sandbox:raisers_edge_id_match
-                SET re_id = ?, fullname = ?, category = ?, const_type = ?
-                WHERE id = ?
+        q_upd_sql = '''UPDATE cx_sandbox:cvid_rec
+                SET re_api_id = ? WHERE cx_id = ?
                 '''
-        q_upd_args = (bb_id, name, 'Student Status', type, carth_id)
+        q_upd_args = (bb_id, carth_id)
+        # q_upd_sql = '''UPDATE cx_sandbox:raisers_edge_id_match
+        #         SET re_id = ?, fullname = ?, category = ?, const_type = ?
+        #         WHERE id = ?
+        #         '''
+        # q_upd_args = (bb_id, name, 'Student Status', type, carth_id)
         print(q_upd_args)
         connection = get_connection(EARL)
         print(q_upd_sql)
@@ -208,9 +212,12 @@ def main():
             """
             print(carth_id)
 
-            chk_sql = '''select count(id) from
-                cx_sandbox:raisers_edge_id_match
-                where id = {}'''.format(carth_id)
+            chk_sql = '''select cx_id, re_api_id from
+                cx_sandbox:cvid_rec
+                where cx_id = {}'''.format(carth_id)
+            # chk_sql = '''select count(id) from
+            #     cx_sandbox:raisers_edge_id_match
+            #     where id = {}'''.format(carth_id)
             print(chk_sql)
             connection = get_connection(EARL)
             with connection:
@@ -218,20 +225,30 @@ def main():
                 # print("Query result = " + str(data_result))
                 if data_result:
                     for row in data_result:
-                        if row[0] == 1:
-                            print("Record exists for " + str(carth_id))
-                            print("Update")
+                        print(str(row[1]))
+                        if row[1] is None:
+                            print("Add bb_id for " + str(row[0]))
                             fn_update_local(i)
-                        elif row[0] == 0:
-                            print("No record for " + str(carth_id))
-                            print("Insert")
-                            fn_insert_local(i)
-                        elif row[0] > 1:
-                            print("Error - multiple records for " + str(carth_id))
+                        else:
+                            print("bbid = " + str(i['id']))
+                            print("CX Value = " + str(row[1]))
+
+
+                        # if row[1] == 1:
+                        #     print("Record exists for " + str(carth_id))
+                        #     # should check to see if it matches?
+                        #     print("Update")
+                        #     fn_update_local(i)
+                        # elif row[1] == 0:
+                        #     print("No record for " + str(carth_id))
+                        #     print("Insert")
+                        #     fn_update_local(i)
+                        # elif row[1] > 1:
+                        #     print("Error - multiple records for " + str(carth_id))
                 else:
-                    print("No record for " + str(carth_id))
-                    print("Insert")
-                    fn_insert_local(i)
+                    print("No cvid record for " + str(carth_id))
+                    # print("Insert")
+                    # fn_insert_local(i)
 
     except Exception as e:
         print("Error in main:  " + str(e))
