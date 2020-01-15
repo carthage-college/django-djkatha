@@ -7,23 +7,9 @@ Python functions to
     based on tokens in the files.
 """
 
-# from pathlib import Path
 import os
 import sys
-import requests
-import json
-import time
-import base64
-import datetime as dt
-from datetime import datetime, timezone
-import django
-import os.path
-import csv
 import argparse
-import mysql.connector
-import pyodbc
-import arrow
-
 
 
 # Note to self, keep this here
@@ -77,17 +63,17 @@ parser.add_argument(
     The process would have to involve 
     1. Find the status of students in CX, (Look for a change date in 
         audit table)
-    2.Then determine if the students with recent changes are in Raiser's Edge
+    2. Then determine if the students with recent changes are in Raiser's Edge
         ***WIll it be possible to have a student in RE w/o a status code?***
         ***Only if student was added as a constituent and not a student***
         ***If so, my table of existing students may be less than perfect***
          
-        3a  Look for student in my table with cx and BB id numbers
-        3b  If not found, make API call to look for student NOT using status 
+        2a  Look for student in my table with cx and BB id numbers
+        2b  If not found, make API call to look for student NOT using status 
             as a filter
-        3c If not in BB data pass on the record...will use O-matic to 
+        2c If not in BB data pass on the record...will use O-matic to 
            add new students three times a year
-    4 If student was in table, update the custom field
+    3. If student was in table, update the custom field
         else If student was just added to BB, add the custom field
             Finally, add student to the local table if new
     --
@@ -115,15 +101,6 @@ def main():
             EARL = None
         # establish database connection
 
-        '''Steve set up something - 
-            But it is more likely we will use cvid_rec to store
-            the bb_id 
-            else, have to figure out how to use the sql database...'''
-
-        action = ''
-        # action = 'set_status'
-        # action = 'update_status'
-
         """"--------GET THE TOKEN------------------"""
         current_token = fn_do_token()
         # print("Current Token = ")
@@ -131,107 +108,116 @@ def main():
 
         """
            -----------------------------------------------------------
-           ---GET STUDENTS WITH A STATUS CHANGE FROM PROG_ENR_REC-----
+           -1-GET STUDENTS WITH A STATUS CHANGE FROM PROG_ENR_REC-----
            -----------------------------------------------------------
         """
 
         # for real..
-        # statquery = '''select O.id, O.acst, O.audit_event, O.audit_timestamp,
-        #     N.id, N.acst, N.audit_event, N.audit_timestamp
-        #     from cars_audit:prog_enr_rec N
-        #     left join cars_audit:prog_enr_rec O
-        #     on O.id = N.id
-        #     and O.acst != N.acst
-        #     and O.audit_event = 'BU'
-        #     where N.audit_event != 'BU'
-        #     and N.audit_timestamp > TODAY - 15
-        #     and N.audit_timestamp = O.audit_timestamp
-        #     '''
+        # Two options.  Get all changed records, look for local BB ID but ALSO
+        # look for BB ID via API.  If there is a record in BB, then add the
+        # BB ID locally if it doesn't exist.
+        # OR
+        # Ignore all changes locally that do not match an existing local BB ID
+        # The latter would be the lowest hits on the API
+        statquery = '''select O.id, O.acst, O.audit_event, O.audit_timestamp,
+                     N.id, N.acst, N.audit_event, N.audit_timestamp,
+                     CR.cx_id, CR.re_api_id
+                     from cars_audit:prog_enr_rec N
+                     left join cars_audit:prog_enr_rec O
+                     on O.id = N.id
+                     and O.acst != N.acst
+                     and O.audit_event = 'BU'
+                     JOIN cvid_rec CR
+                     ON CR.cx_id = O.id
+                     where N.audit_event != 'BU'
+                     and N.audit_timestamp > TODAY - 20
+                     and N.audit_timestamp = O.audit_timestamp
+                     and CR.re_api_id is not null
+            '''
 
-        # for testing...
-        statquery = '''select PER.id, PER.acst, AST.txt 
-            from prog_enr_rec PER
-            JOIN acad_stat_table AST
-            on AST.acst = PER.acst
-            where PER.id in (1357063)'''
-            # (select id from cx_sandbox:raisers_edge_id_match) '''
+        # # for testing...
+        # statquery = '''select PER.id, PER.acst, AST.txt
+        #     from prog_enr_rec PER
+        #     JOIN acad_stat_table AST
+        #     on AST.acst = PER.acst
+        #     where PER.id in (1405412)'''
         # print(statquery)
 
         connection = get_connection(EARL)
         with connection:
-            data_result = xsql(statquery).fetchall()
+            data_result = xsql(statquery, connection).fetchall()
             ret = list(data_result)
             for i in ret:
-                print(str(i[0]) + " " + i[1])
+                print(str(i[0]) + " " + i[5] + " " + str(i[9]))
                 carth_id = i[0]
-                acad_stat = i[2]
-
-                # carth_id = 273530
-                # # carth_id = 1524365
-
+                acad_stat = i[5]
+                bb_id = i[9]
+                print(bb_id)
                 """
                    -----------------------------------------------------------
-                   ---FIND RAISERS EDGE ID IN LOCAL TABLE --------------------
+                  --2-FIND RAISERS EDGE ID IN LOCAL TABLE --------------------
+                    MAY NOT BE NECESSARY IF I ASSUME ALL THE INDIVIDUALS
+                    THAT MATTER ARE IN CVID_REC ALREADY AND DON"T LOOK FOR
+                    CHANGES FOR ANY OTHER STUDENTS
                    -----------------------------------------------------------
-        
+
                   Look for student and status in local table
-                  Dave R. says to add a column to cvid_rec
                   Else look for student and status at BB via API
                   Add to BB if necessary (THIS WILL BE DONE BY OMATIC)
                   Add or update status in BB
                   Update local table if necessary
                 """
                 """1. Look for id in local table"""
-                # initialize bb_id
-                bb_id = 0
-                chk_sql = '''select re_api_id from
-                    cx_sandbox:cvid_rec
-                    where cx_id = {}'''.format(carth_id)
+                # # initialize bb_id
+                # bb_id = 0
+                # chk_sql = '''select re_api_id from cvid_rec
+                #     where cx_id = {}'''.format(carth_id)
                 # print(chk_sql)
-                connection = get_connection(EARL)
-                with connection:
-                    data_result = xsql(chk_sql).fetchall()
+                # connection = get_connection(EARL)
+                # with connection:
+                #     data_result = xsql(chk_sql, connection).fetchall()
+                #     if data_result is None:
+                #         print("Query cvid_rec:  No bb_id stored locally")
+                #         pass
+                #     else:
+                #         ret = list(data_result)
+                #         # if ret:
+                #         for j in ret:
+                #             if j[0] is not None:
+                #                 bb_id = j[0]
+                #                 print("BB ID = " + str(bb_id))
+                #             else:
+                #                 print("No bb_id stored locally")
+                #                 bb_id = get_constituent_id(current_token, carth_id)
+                #                 print(bb_id)
+                #
+                #         '''-------------------------------------------------------
+                #           --3-UPDATE THE CUSTOM STUDENT STATUS FIELD----------------
+                #         ----------------------------------------------------------
+                #         '''
+                if bb_id != 0:
+                    print("Update custom field")
+                    # Get the row id of the custom field record
+                    field_id = get_const_custom_fields(current_token, bb_id,
+                                                  'Student Status')
 
-                    ret = list(data_result)
-                    if ret:
-                        for j in ret:
-                            bb_id = j[0]
-                            print(bb_id)
+                    # print("set custom fields: " + str(carth_id) +
+                    # ", "
+                    #       + acad_stat)
 
+                    """ret is the id of the custom record, not the student"""
+                    if field_id == 0:
+                        print('Add new record?')
                     else:
-                        # Go to the API to see if student is there?
-                        print("No bb_id stored locally")
-                        bb_id = get_constituent_id(current_token, carth_id)
-                        print(bb_id)
-
-                    '''-------------------------------------------------------
-                    ---UPDATE THE CUSTOM STUDENT STATUS FIELD-----------------
-                    ----------------------------------------------------------
-                    '''
-                    if bb_id != 0:
-                        '''We have to make a call to get the internal id for
-                           the custom field entry, then use that to reset it 
-                        '''
-                        ret = get_const_custom_fields(current_token, bb_id,
-                                                      'Student Status')
-                        # print(ret)
-
-                        # print("set custom fields: " + str(carth_id) + ", "
-                        #       + acad_stat)
-
-                        if ret == 0:
-                            print('Add new record')
-                        else:
-                            print('Update record')
-
-                            # ret = update_const_custom_fields(current_token,
-                            #                                  str(ret),
-                            #                                  'Test', acad_stat)
-                            # print(ret)
-
-                    else:
-                        print("Nobody home")
-
+                        print('Update record ' + str(field_id) + ' ' 
+                              + acad_stat)
+                        ret1 = update_const_custom_fields(current_token,
+                                                      str(field_id),
+                                                      'Test',
+                                                      acad_stat)
+                        print(ret1)
+                else:
+                    print("Nobody home")
 
         """
             **************************************
