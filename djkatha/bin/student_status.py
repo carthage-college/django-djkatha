@@ -88,17 +88,17 @@ def main():
 
         # determines which database is being called from the command line
         if database == 'cars':
-            EARL = settings.INFORMIX_ODBC_TRAIN
+            EARL = settings.INFORMIX_ODBC
         if database == 'train':
             EARL = settings.INFORMIX_ODBC_TRAIN
-        # if database == 'sandbox':
-        #     EARL = settings.INFORMIX_ODBC_SANDBOX
+        if database == 'sandbox':
+            EARL = settings.INFORMIX_ODBC_SANDBOX
 
-        else:
+        # else:
             # # this will raise an error when we call get_engine()
             # below but the argument parser should have taken
             # care of this scenario and we will never arrive here.
-            EARL = None
+            # EARL = None
         # establish database connection
 
         """"--------GET THE TOKEN------------------"""
@@ -111,7 +111,7 @@ def main():
            -1-GET STUDENTS WITH A STATUS CHANGE FROM PROG_ENR_REC-----
            -----------------------------------------------------------
         """
-
+        print(EARL)
         # for real..
         # Two options.  Get all changed records, look for local BB ID but ALSO
         # look for BB ID via API.  If there is a record in BB, then add the
@@ -130,7 +130,7 @@ def main():
                      JOIN cvid_rec CR
                      ON CR.cx_id = O.id
                      where N.audit_event != 'BU'
-                     and N.audit_timestamp > TODAY - 20
+                     and N.audit_timestamp > TODAY - 1
                      and N.audit_timestamp = O.audit_timestamp
                      and CR.re_api_id is not null
             '''
@@ -141,7 +141,7 @@ def main():
         #     JOIN acad_stat_table AST
         #     on AST.acst = PER.acst
         #     where PER.id in (1405412)'''
-        # print(statquery)
+        print(statquery)
 
         connection = get_connection(EARL)
         with connection:
@@ -211,11 +211,11 @@ def main():
                     else:
                         print('Update record ' + str(field_id) + ' ' 
                               + acad_stat)
-                        ret1 = update_const_custom_fields(current_token,
-                                                      str(field_id),
-                                                      'Test',
-                                                      acad_stat)
-                        print(ret1)
+                        # ret1 = update_const_custom_fields(current_token,
+                        #                               str(field_id),
+                        #                               'Test',
+                        #                               acad_stat)
+                        # print(ret1)
                 else:
                     print("Nobody home")
 
