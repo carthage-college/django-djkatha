@@ -204,7 +204,7 @@ def main():
 
         # determines which database is being called from the command line
         # if database == 'cars':
-        #     EARL = settings.INFORMIX_ODBC_TRAIN
+        #     EARL = settings.INFORMIX
         # if database == 'train':
         EARL = settings.INFORMIX_ODBC_TRAIN
         # if database == 'sandbox':
@@ -228,6 +228,8 @@ def main():
            So we search for the bb_id for all who have one
            THEN, we can go get the carthage id in a separate step if need be
            We should be able to use a date range to avoid revisiting records"""
+
+        # API call to get BB ID
         x = get_constituents_custom_field_list(current_token, str(searchtime))
         if x == 0:
             print("No Data Returned")
@@ -262,7 +264,6 @@ def main():
                                 # print(bb_id)
                                 ret = fn_update_local2(carth_id, bb_id)
                                 print(ret)
-
 
     except Exception as e:
         print("Error in main:  " + str(e))
