@@ -7,6 +7,7 @@ import json
 import time
 # import base64
 import datetime
+from datetime import datetime, date, timedelta, timezone
 import django
 import csv
 import arrow
@@ -246,6 +247,40 @@ def get_custom_fields(current_token):
             print(i['type'])
         return 1
 
+def get_constituents_custom_field_list(current_token, searchtime):
+
+    a = datetime.strptime(str(searchtime), '%Y-%m-%d')
+    print(a)
+    x = a.isoformat()
+    print(x)
+    t = str(x)
+    print(t)
+    z = x[:10] + 'T12:00:00.000-04:00'
+    # z = t[:20] + '.0000000-04:00'
+    print(z)
+
+    # 2020-01-05T12:00:00.0000000-04:00 THis works!
+
+    urlst = "https://api.sky.blackbaud.com/constituent/v1/constituents/" \
+            "customfields?date_added=" + searchtime + "" \
+            "&category=Student Status" \
+            "&limit=20&" \
+            "offset=100"
+
+    print(urlst)
+    x = api_get(current_token, urlst)
+    return x
+    # if x == 0:
+    #     print("NO DATA")
+    #     return 0
+    # else:
+    #     for i in x['value']:
+    #         # print(i)
+    #         print(i['parent_id'])
+    #         print(i['value'])
+    #     return 1
+
+
 
 def get_custom_field_value(current_token, category):
     try:
@@ -281,11 +316,11 @@ def get_constituent_id(current_token, carthid):
             return 0
         else:
             for i in x['value']:
-                print(i['id'])
+                # print(i['id'])
                 id = i['id']
-                print(i['name'])
-                print(i['lookup_id'])
-                print(i['inactive'])
+                # print(i['name'])
+                # print(i['lookup_id'])
+                # print(i['inactive'])
 
             return id
 
@@ -328,22 +363,39 @@ def get_constituent_custom_fields(current_token, bb_id):
         return 0
 
 
-def get_constituent_list(current_token):
+def get_constituent_list(current_token, searchtime):
     try:
+        a = datetime.strptime(str(searchtime), '%Y-%m-%d')
+        print(a)
+        x = a.isoformat()
+        print(x)
+        t = str(x)
+        print(t)
+        z = x[:10] + 'T12:00:00.000-04:00'
+        # z = t[:20] + '.0000000-04:00'
+        print(z)
+
+        # urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents?' \
+        #             'custom_field_category=Student Status' \
+        #         '&date_added>2019-11-13T10:59:03.761-05:00&limit=3'
+        # print(urlst)
+
+        # 2020-01-01T17:59:31.1600745-04:00  THis works
+        # 2020-01-05T12:00:00.000-04:00 this fails
+        # 2020-01-05T12:00:00.0000000-04:00 THis works!
 
         urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents?' \
-                    'custom_field_category=Student Status' \
-                '&date_added>2019-11-13T10:59:03.761-05:00&limit=10'
-        # urlst =  'https://api.sky.blackbaud.com/constituent/v1/constituents/' \
-        #          'search?search_text=' + str(carthid) \
-        #          + '&search_field=lookup_id'
+                'custom_field_category=Student Status' \
+                '&date_added>' + str(z) + '&limit=3'
+        print(urlst)
 
+        # Student Status, Involvement
         x = api_get(current_token, urlst)
+        # x = 0
         if x == 0:
             print("NO DATA")
             return 0
         else:
-            # with open("id_list.csv", 'w') as id_lst:
             #     for i in x['value']:
             #     # print(x)
             #     #     print(i['id'])
@@ -355,8 +407,6 @@ def get_constituent_list(current_token):
             #             # print('Name = ' + name + ', CarthID = ' + str(carth_id)
             #             #   + ', BlackbaudID = ' + str(bb_id) + ', type = '
             #             #   + type)
-            #             csvwriter = csv.writer(id_lst, quoting=csv.QUOTE_NONE)
-            #             csvwriter.writerow([carth_id, bb_id, name, type])
             # return 1
             return x
     except Exception as e:
@@ -399,6 +449,7 @@ def update_const_custom_fields(current_token, itemid, comment, val):
         date_time = utc.to('US/Eastern')
         print(str(date_time))
         dat = str(date_time)
+
 
 
         body = {"comment": comment, "date_modified": dat,
