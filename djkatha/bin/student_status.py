@@ -119,28 +119,32 @@ def main():
         # OR
         # Ignore all changes locally that do not match an existing local BB ID
         # The latter would be the lowest hits on the API
-        statquery = '''select O.id, O.acst, O.audit_event, O.audit_timestamp,
-                     N.id, N.acst, N.audit_event, N.audit_timestamp,
-                     CR.cx_id, CR.re_api_id
-                     from cars_audit:prog_enr_rec N
-                     left join cars_audit:prog_enr_rec O
-                     on O.id = N.id
-                     and O.acst != N.acst
-                     and O.audit_event = 'BU'
-                     JOIN cvid_rec CR
-                     ON CR.cx_id = O.id
-                     where N.audit_event != 'BU'
-                     and N.audit_timestamp > TODAY - 1
-                     and N.audit_timestamp = O.audit_timestamp
-                     and CR.re_api_id is not null
-            '''
+        # statquery = '''select O.id, O.acst, O.audit_event, O.audit_timestamp,
+        #              N.id, N.acst, N.audit_event, N.audit_timestamp,
+        #              CR.cx_id, CR.re_api_id
+        #              from cars_audit:prog_enr_rec N
+        #              left join cars_audit:prog_enr_rec O
+        #              on O.id = N.id
+        #              and O.acst != N.acst
+        #              and O.audit_event = 'BU'
+        #              JOIN cvid_rec CR
+        #              ON CR.cx_id = O.id
+        #              where N.audit_event != 'BU'
+        #              and N.audit_timestamp > TODAY - 1
+        #              and N.audit_timestamp = O.audit_timestamp
+        #              and CR.re_api_id is not null
+        #     '''
 
-        # # for testing...
-        # statquery = '''select PER.id, PER.acst, AST.txt
-        #     from prog_enr_rec PER
-        #     JOIN acad_stat_table AST
-        #     on AST.acst = PER.acst
-        #     where PER.id in (1405412)'''
+        # for testing...
+
+        statquery = '''select PER.id, PER.acst, 'BU', '', PER.id, PER.acst, 
+            'AU', '', PER.id, CR.re_api_id
+            from prog_enr_rec PER
+            JOIN acad_stat_table AST
+            on AST.acst = PER.acst
+            JOIN cvid_rec CR on 
+            CR.cx_id = PER.id
+            where PER.id in (1387218)'''
         print(statquery)
 
         connection = get_connection(EARL)
@@ -201,9 +205,8 @@ def main():
                     field_id = get_const_custom_fields(current_token, bb_id,
                                                   'Student Status')
 
-                    # print("set custom fields: " + str(carth_id) +
-                    # ", "
-                    #       + acad_stat)
+                    print("set custom fields: " + str(carth_id) + ", "
+                          + acad_stat)
 
                     """ret is the id of the custom record, not the student"""
                     if field_id == 0:
@@ -211,11 +214,11 @@ def main():
                     else:
                         print('Update record ' + str(field_id) + ' ' 
                               + acad_stat)
-                        # ret1 = update_const_custom_fields(current_token,
-                        #                               str(field_id),
-                        #                               'Test',
-                        #                               acad_stat)
-                        # print(ret1)
+                        ret1 = update_const_custom_fields(current_token,
+                                                      str(field_id),
+                                                      'Test',
+                                                      acad_stat)
+                        print(ret1)
                 else:
                     print("Nobody home")
 
