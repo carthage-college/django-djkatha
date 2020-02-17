@@ -145,7 +145,7 @@ def main():
             JOIN cvid_rec CR on 
             CR.cx_id = PER.id
             where PER.id in (1387218)'''
-        print(statquery)
+        # print(statquery)
 
         connection = get_connection(EARL)
         with connection:
@@ -192,7 +192,8 @@ def main():
                 #                 print("BB ID = " + str(bb_id))
                 #             else:
                 #                 print("No bb_id stored locally")
-                #                 bb_id = get_constituent_id(current_token, carth_id)
+                #                 bb_id = get_constituent_id(current_token,
+                #                 carth_id)
                 #                 print(bb_id)
                 #
                 #         '''-------------------------------------------------------
