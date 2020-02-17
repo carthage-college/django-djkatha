@@ -227,7 +227,11 @@ def main():
            We only want constituents who have a student status
            So we search for the bb_id for all who have one
            THEN, we can go get the carthage id in a separate step if need be
-           We should be able to use a date range to avoid revisiting records"""
+           We should be able to use a date range to avoid revisiting records
+           
+           UPDATE 1/17/20  It will more likely be the case that we will get
+           a csv list from advancement of the students added.  If so, we 
+           can read that csv and find the BB_ID only for those students"""
 
         # API call to get BB ID
         x = get_constituents_custom_field_list(current_token, str(searchtime))
