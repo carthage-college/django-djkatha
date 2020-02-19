@@ -93,20 +93,20 @@ def fn_do_token():
             the token expires in 60 minutes, but the refresh token
             is good for 60 days"""
         t = cache.get('refreshtime')
-        print(t)
+        # print(t)
 
         if t is None:
             r = fn_token_refresh()
-            print(r)
+            # print(r)
         elif t < datetime.now() - dt.timedelta(minutes=59):
             print('Out of limit')
-            print(t)
-            print(datetime.now() - dt.timedelta(minutes=59))
+            # print(t)
+            # print(datetime.now() - dt.timedelta(minutes=59))
             r = fn_token_refresh()
-            print(r)
+            # print(r)
         else:
-            print("within limit")
-
+            # print("within limit")
+            pass
         """"--------GET THE TOKEN------------------"""
         current_token = cache.get('tokenkey')
         # print("Current Token = ")
