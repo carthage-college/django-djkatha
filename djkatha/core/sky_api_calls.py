@@ -23,21 +23,23 @@ from django.core.cache import cache
 
 def api_get(current_token, url):
     print("In api_get")
-    try:
+    print(url)
 
+    try:
         params = {'HOST': 'api.sky.blackbaud.com'}
-        status = 'Initial Value'
+        status = 0
         # Setting status to something other than 200 initially
+        # print(status)
         while status != 200 or url != '':
             time.sleep(.2)  # SKY API Rate limited to 5 calls/sec
-
             headers = {'Bb-Api-Subscription-Key':
                            settings.BB_SKY_SUBSCRIPTION_KEY,
                        'Authorization': 'Bearer ' + current_token}
-
+            # print(headers)
             response = requests.get(url=url,
                                     params=params,
                                     headers=headers)
+
             status = response.status_code
             # print(status)
             if status == 400:
@@ -52,10 +54,10 @@ def api_get(current_token, url):
             else:
                 #     if response_dict['count'] == 0:
                 response_dict = json.loads(response.text)
-                if response_dict['count'] == 0:
-                    return 0
-                else:
-                    return response_dict
+                # if response_dict['count'] == 0:
+                #     return 0
+                # else:
+                return response_dict
 
     except Exception as e:
         print("Error in api_get:  " + str(e))
@@ -142,12 +144,12 @@ def api_delete(current_token, url):
 
 
 def get_const_custom_fields(current_token, id, category):
-    # print("In get_const_custom_fields")
+    print("In get_const_custom_fields")
     try:
         urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents/' \
                 + str(id) + '/customfields'
         x = api_get(current_token, urlst)
-        # print(x)
+        print(x)
 
         # This will return multiple records...How to parse things to get the
         # one item I want...
@@ -331,6 +333,28 @@ def get_constituent_id(current_token, carthid):
         return 0
 
 
+def get_lookup_id(current_token, bb_id):
+    try:
+        urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents/' \
+                 + str(bb_id)
+        # print(urlst)
+
+        x = api_get(current_token, urlst)
+        if x == 0:
+            # print("NO DATA")
+            return 0
+        else:
+            # print(x)
+            # print(x['lookup_id'])
+            return x['lookup_id']
+
+    except Exception as e:
+        print("Error in get_lookup_id:  " + str(e))
+        # fn_write_error("Error in get_lookup_id.py - Main: "
+        #                + str(e))
+        return 0
+
+
 def get_constituent_custom_fields(current_token, bb_id):
     urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents/' \
             + bb_id + '/customfields'
@@ -450,17 +474,16 @@ def update_const_custom_fields(current_token, itemid, comment, val):
         print(str(date_time))
         dat = str(date_time)
 
-
-
         body = {"comment": comment, "date_modified": dat,
                 "date": dat, "value": val}
 
-        # print(urlst, body)
+        print(urlst, body)
         x = api_patch(current_token, urlst, body)
         if x == 0:
             print("Patch Failure")
             return 1
         else:
+            print("Patch Success")
             return 0
 
 
