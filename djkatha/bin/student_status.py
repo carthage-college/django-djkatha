@@ -59,27 +59,6 @@ parser.add_argument(
     dest="database"
 )
 
-"""
-    The process would have to involve 
-    1. Find the status of students in CX, (Look for a change date in 
-        audit table)
-    2. Then determine if the students with recent changes are in Raiser's Edge
-        ***WIll it be possible to have a student in RE w/o a status code?***
-        ***Only if student was added as a constituent and not a student***
-        ***If so, my table of existing students may be less than perfect***
-         
-        2a  Look for student in my table with cx and BB id numbers
-        2b  If not found, make API call to look for student NOT using status 
-            as a filter
-        2c If not in BB data pass on the record...will use O-matic to 
-           add new students three times a year
-    3. If student was in table, update the custom field
-        else If student was just added to BB, add the custom field
-            Finally, add student to the local table if new
-    --
-    No way to test any of this because there are no students in RE yet...
-"""
-
 def main():
     try:
 
@@ -100,6 +79,7 @@ def main():
             # care of this scenario and we will never arrive here.
             # EARL = None
         # establish database connection
+        print(EARL)
 
         """"--------GET THE TOKEN------------------"""
         current_token = fn_do_token()
@@ -107,18 +87,23 @@ def main():
         # print(current_token)
 
         """
+            -----------------------------------------------------------
+            Debating whether to call the sky_constituent_list routine here
+            to make sure the cvid_rec entries are current
+            -----------------------------------------------------------
+        """
+
+        """
            -----------------------------------------------------------
            -1-GET STUDENTS WITH A STATUS CHANGE FROM PROG_ENR_REC-----
+            Assume all current blackbaud students have a re_api_id in the 
+            cvid_rec table.  This will be handled through a separate prior
+            process.
+            Look for status changes only for students who have the 
+            re_api_id entry
            -----------------------------------------------------------
         """
-        print(EARL)
-        # for real..
-        # Two options.  Get all changed records, look for local BB ID but ALSO
-        # look for BB ID via API.  If there is a record in BB, then add the
-        # BB ID locally if it doesn't exist.
-        # OR
-        # Ignore all changes locally that do not match an existing local BB ID
-        # The latter would be the lowest hits on the API
+
         # statquery = '''select O.id, O.acst, O.audit_event, O.audit_timestamp,
         #              N.id, N.acst, N.audit_event, N.audit_timestamp,
         #              CR.cx_id, CR.re_api_id
@@ -144,9 +129,9 @@ def main():
             on AST.acst = PER.acst
             JOIN cvid_rec CR on 
             CR.cx_id = PER.id
-            where PER.id in (1387218)'''
+            where PER.id in (1429768)'''
         # print(statquery)
-
+        # 2384
         connection = get_connection(EARL)
         with connection:
             data_result = xsql(statquery, connection).fetchall()
@@ -158,12 +143,12 @@ def main():
                 bb_id = i[9]
                 print(bb_id)
                 """
-                   -----------------------------------------------------------
-                  --2-FIND RAISERS EDGE ID IN LOCAL TABLE --------------------
-                    MAY NOT BE NECESSARY IF I ASSUME ALL THE INDIVIDUALS
-                    THAT MATTER ARE IN CVID_REC ALREADY AND DON"T LOOK FOR
-                    CHANGES FOR ANY OTHER STUDENTS
-                   -----------------------------------------------------------
+                -----------------------------------------------------------
+                --2-FIND RAISERS EDGE ID IN LOCAL TABLE --------------------
+                MAY NOT BE NECESSARY IF I ASSUME ALL THE INDIVIDUALS
+                THAT MATTER ARE IN CVID_REC ALREADY AND DON"T LOOK FOR
+                CHANGES FOR ANY OTHER STUDENTS
+                -----------------------------------------------------------
 
                   Look for student and status in local table
                   Else look for student and status at BB via API
@@ -171,34 +156,9 @@ def main():
                   Add or update status in BB
                   Update local table if necessary
                 """
-                """1. Look for id in local table"""
-                # # initialize bb_id
-                # bb_id = 0
-                # chk_sql = '''select re_api_id from cvid_rec
-                #     where cx_id = {}'''.format(carth_id)
-                # print(chk_sql)
-                # connection = get_connection(EARL)
-                # with connection:
-                #     data_result = xsql(chk_sql, connection).fetchall()
-                #     if data_result is None:
-                #         print("Query cvid_rec:  No bb_id stored locally")
-                #         pass
-                #     else:
-                #         ret = list(data_result)
-                #         # if ret:
-                #         for j in ret:
-                #             if j[0] is not None:
-                #                 bb_id = j[0]
-                #                 print("BB ID = " + str(bb_id))
-                #             else:
-                #                 print("No bb_id stored locally")
-                #                 bb_id = get_constituent_id(current_token,
-                #                 carth_id)
-                #                 print(bb_id)
-                #
-                #         '''-------------------------------------------------------
-                #           --3-UPDATE THE CUSTOM STUDENT STATUS FIELD----------------
-                #         ----------------------------------------------------------
+                #         '''------------------------------------------------
+                #           --3-UPDATE THE CUSTOM STUDENT STATUS FIELD-------
+                #         ---------------------------------------------------
                 #         '''
                 if bb_id != 0:
                     print("Update custom field")
@@ -222,14 +182,6 @@ def main():
                         print(ret1)
                 else:
                     print("Nobody home")
-
-        """
-            **************************************
-            **************************************
-            **************************************
-            Here I need to get the local database stuff added
-        """
-
 
     except Exception as e:
         print("Error in main:  " + str(e))
