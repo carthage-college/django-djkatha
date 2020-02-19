@@ -28,7 +28,7 @@ from django.conf import settings
 from djkatha.core.sky_api_auth import fn_do_token
 from djkatha.core.sky_api_calls import get_constituent_list, \
     get_constituent_custom_fields, get_constituents_custom_field_list, \
-    get_constituent_id
+    get_constituent_id, get_lookup_id
 from djimix.core.utils import get_connection, xsql
 
 
@@ -190,11 +190,12 @@ def fn_update_local2(carth_id, bb_id):
         with connection:
             cur = connection.cursor()
             cur.execute(q_upd_sql, q_upd_args)
+            return 1
     except pyodbc.Error as err:
             # print("Error in fn_update_local:  " + str(err))
             sqlstate = err.args[0]
             print(sqlstate)
-
+            return 0
 
 
 def main():
@@ -220,7 +221,7 @@ def main():
             Student Status-------"""
         """---We need this to match Carthage ID to Blackbaud ID------"""
 
-        searchtime = date.today() + timedelta(days=-10)
+        searchtime = date.today() + timedelta(days=-100)
         # print("Searchtime = " + str(searchtime))
 
         """Doing this in reverse by necessity and for logic 
@@ -240,8 +241,7 @@ def main():
         else:
             # print(x)
             for i in x['value']:
-                # print(i['parent_id'])
-                # print(i['value'])
+                bb_id = i["parent_id"]
 
                 chk_sql = '''select cx_id, re_api_id from cvid_rec
                     where re_api_id = {}'''.format(i['parent_id'])
@@ -251,23 +251,19 @@ def main():
 
                 with connection:
                     data_result = xsql(chk_sql, connection, key='debug')
-                    if data_result:
-                        for row in data_result:
-                            carth_id = row[0]
-                            # print("Carth ID = " + str(carth_id))
+                    x = data_result.fetchone()
+                    if x is None:
+                        # print("Need to find CarthID for bb_id "
+                        #       + str(bb_id))
+                        carth_id = get_lookup_id(current_token, bb_id)
+                        # print(bb_id)
+                        ret = fn_update_local2(carth_id, bb_id)
+                        # print(ret)
+                    else:
+                        # print("CVID Rec exists for" + str(x[0]))
+                        # carth_id = x[0]
+                        pass
 
-                            if row[0] is not None:
-                                print("bbid = " + str(row[1]) + " Carthid = "
-                                      + str(row[0]))
-
-                            else:
-                                print("Need to find CarthID for bb_id "
-                                      + str(row[0]))
-                                bb_id = get_constituent_id(current_token,
-                                                         carth_id)
-                                # print(bb_id)
-                                ret = fn_update_local2(carth_id, bb_id)
-                                print(ret)
 
     except Exception as e:
         print("Error in main:  " + str(e))
