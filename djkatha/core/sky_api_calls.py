@@ -23,7 +23,7 @@ from django.core.cache import cache
 
 def api_get(current_token, url):
     print("In api_get")
-    print(url)
+    # print(url)
 
     try:
         params = {'HOST': 'api.sky.blackbaud.com'}
@@ -82,8 +82,8 @@ def api_post(current_token, url, data):
                                 )
         status = response.status_code
         stat_msg = response.text
-        print(status)
-        print(stat_msg)
+        # print(status)
+        # print(stat_msg)
 
         return status
     except Exception as e:
@@ -109,8 +109,8 @@ def api_patch(current_token, url, data):
                                  )
         status = response.status_code
         stat_msg = response.text
-        print(status)
-        print(stat_msg)
+        # print(status)
+        # print(stat_msg)
 
         return status
     except Exception as e:
@@ -132,8 +132,8 @@ def api_delete(current_token, url):
         response = requests.delete(url=url, headers=headers, params=params)
         status = response.status_code
         stat_msg = response.text
-        print(status)
-        print(stat_msg)
+        # print(status)
+        # print(stat_msg)
 
         return status
     except Exception as e:
@@ -149,7 +149,7 @@ def get_const_custom_fields(current_token, id, category):
         urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents/' \
                 + str(id) + '/customfields'
         x = api_get(current_token, urlst)
-        print(x)
+        # print(x)
 
         # This will return multiple records...How to parse things to get the
         # one item I want...
@@ -161,18 +161,18 @@ def get_const_custom_fields(current_token, id, category):
                 # print(i)
                 if i['category'] == category:
                     item_id = i['id']
-                    print("ID = " + i['id'])
+                    # print("ID = " + i['id'])
                     # print("Category = " + i['category'])
                     if 'comment' not in x['value']:
                         print("Comment not entered")
                     else:
                         print("Comment = " + str(i['comment']))
                     # print("Date = " + i['date'])
-                    print("Date Added = " + i['date_added'])
-                    print("Date Modified = " + i['date_modified'])
-                    print("Parent id = " + i['parent_id'])
+                    # print("Date Added = " + i['date_added'])
+                    # print("Date Modified = " + i['date_modified'])
+                    # print("Parent id = " + i['parent_id'])
                     # print("Type = " + i['type'])
-                    print("Value = " + i['value'])
+                    print("Blackbaud Status Value = " + i['value'])
                     return item_id
 
     except Exception as e:
@@ -235,6 +235,7 @@ def get_relationship_types(current_token):
 
 
 def get_custom_fields(current_token):
+    print("In get_custom_fields")
     urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents/' \
             'customfields/categories/details'
 
@@ -243,20 +244,20 @@ def get_custom_fields(current_token):
         print("NO DATA")
         return 0
     else:
-        for i in x['value']:
+        # for i in x['value']:
             # print(i)
-            print(i['name'])
-            print(i['type'])
+            # print(i['name'])
+            # print(i['type'])
         return 1
 
 def get_constituents_custom_field_list(current_token, searchtime):
 
     a = datetime.strptime(str(searchtime), '%Y-%m-%d')
-    print(a)
+    # print(a)
     x = a.isoformat()
-    print(x)
+    # print(x)
     t = str(x)
-    print(t)
+    # print(t)
     z = x[:10] + 'T12:00:00.000-04:00'
     # z = t[:20] + '.0000000-04:00'
     print(z)
@@ -269,7 +270,7 @@ def get_constituents_custom_field_list(current_token, searchtime):
             "&limit=20&" \
             "offset=100"
 
-    print(urlst)
+    # print(urlst)
     x = api_get(current_token, urlst)
     return x
     # if x == 0:
@@ -286,6 +287,7 @@ def get_constituents_custom_field_list(current_token, searchtime):
 
 def get_custom_field_value(current_token, category):
     try:
+        print("In get_custom_field_value")
         urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents/' \
                 'customfields/categories/values?category_name=' + category
         # print(urlst)
@@ -296,7 +298,7 @@ def get_custom_field_value(current_token, category):
             return 0
         else:
             # for i in x['value']:
-            print(x)
+            # print(x)
                 # print(i)
             return 1
     except Exception as e:
@@ -359,6 +361,7 @@ def get_constituent_custom_fields(current_token, bb_id):
     urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents/' \
             + bb_id + '/customfields'
     try:
+        print("In get_constituent_custom_fields")
         x = api_get(current_token, urlst)
         if x == 0:
             print("NO DATA")
@@ -366,7 +369,7 @@ def get_constituent_custom_fields(current_token, bb_id):
         else:
             # with open("id_list.csv", 'w') as id_lst:
             #     for i in x['value']:
-            print(x)
+            # print(x)
             #     #     print(i['id'])
             #         bb_id = i['id']
             #         carth_id = i['lookup_id']
@@ -388,16 +391,18 @@ def get_constituent_custom_fields(current_token, bb_id):
 
 
 def get_constituent_list(current_token, searchtime):
+
     try:
+        print("In get_constituent_list")
         a = datetime.strptime(str(searchtime), '%Y-%m-%d')
-        print(a)
+        # print(a)
         x = a.isoformat()
-        print(x)
+        # print(x)
         t = str(x)
-        print(t)
+        # print(t)
         z = x[:10] + 'T12:00:00.000-04:00'
         # z = t[:20] + '.0000000-04:00'
-        print(z)
+        # print(z)
 
         # urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents?' \
         #             'custom_field_category=Student Status' \
@@ -411,7 +416,7 @@ def get_constituent_list(current_token, searchtime):
         urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents?' \
                 'custom_field_category=Student Status' \
                 '&date_added>' + str(z) + '&limit=3'
-        print(urlst)
+        # print(urlst)
 
         # Student Status, Involvement
         x = api_get(current_token, urlst)
@@ -461,7 +466,8 @@ def delete_const_custom_fields(current_token, itemid):
 
 def update_const_custom_fields(current_token, itemid, comment, val):
     try:
-        print(itemid)
+        print("In update_const_custom_fields")
+        # print(itemid)
         urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents/' \
                 'customfields/' + itemid
 
@@ -469,15 +475,15 @@ def update_const_custom_fields(current_token, itemid, comment, val):
         # date_time = now.strftime("%Y-%m-%dT%H:%M:%S")
 
         utc = arrow.utcnow()
-        print(utc.to('US/Eastern'))
+        # print(utc.to('US/Eastern'))
         date_time = utc.to('US/Eastern')
-        print(str(date_time))
+        # print(str(date_time))
         dat = str(date_time)
 
         body = {"comment": comment, "date_modified": dat,
                 "date": dat, "value": val}
 
-        print(urlst, body)
+        # print(urlst, body)
         x = api_patch(current_token, urlst, body)
         if x == 0:
             print("Patch Failure")
@@ -496,6 +502,7 @@ def update_const_custom_fields(current_token, itemid, comment, val):
 
 def set_const_custom_field(current_token, id, value, category, comment):
     # Not passing an item id - this is a create, one will be created
+    print("In set_const_custom_field")
     urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents/' \
             'customfields'
 
@@ -503,14 +510,14 @@ def set_const_custom_field(current_token, id, value, category, comment):
     # date_time = now.strftime("%Y-%m-%dT%H:%M:%S")
 
     utc = arrow.utcnow()
-    print(utc.to('US/Eastern'))
+    # print(utc.to('US/Eastern'))
     date_time = utc.to('US/Eastern')
 
     # Constituent ID is passed in as Parent ID
     body = {'category': category, 'comment': comment, 'date': date_time,
             'parent_id': id, 'value': value}
 
-    print(urlst, body)
+    # print(urlst, body)
 
     # x = api_post(current_token, urlst, body)
     # if x == 0:
