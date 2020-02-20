@@ -30,6 +30,7 @@ os.environ['ODBCINI'] = settings.ODBCINI
 os.environ['ONCONFIG'] = settings.ONCONFIG
 os.environ['INFORMIXSQLHOSTS'] = settings.INFORMIXSQLHOSTS
 # ________________
+import sky_constituent_list
 from django.conf import settings
 from django.core.cache import cache
 from djkatha.core.sky_api_auth import fn_do_token
@@ -79,7 +80,7 @@ def main():
             # care of this scenario and we will never arrive here.
             # EARL = None
         # establish database connection
-        print(EARL)
+        # print(EARL)
 
         """"--------GET THE TOKEN------------------"""
         current_token = fn_do_token()
@@ -92,6 +93,9 @@ def main():
             to make sure the cvid_rec entries are current
             -----------------------------------------------------------
         """
+        # Probably should change the other file to a class or whatever if I
+        # do this permanently
+        sky_constituent_list.main()
 
         """
            -----------------------------------------------------------
@@ -141,7 +145,7 @@ def main():
                 carth_id = i[0]
                 acad_stat = i[5]
                 bb_id = i[9]
-                print(bb_id)
+                # print(bb_id)
                 """
                 -----------------------------------------------------------
                 --2-FIND RAISERS EDGE ID IN LOCAL TABLE --------------------
@@ -171,10 +175,11 @@ def main():
 
                     """ret is the id of the custom record, not the student"""
                     if field_id == 0:
-                        print('Add new record?')
+                        # print('Add new record?')
+                        pass
                     else:
-                        print('Update record ' + str(field_id) + ' ' 
-                              + acad_stat)
+                        # print('Update record ' + str(field_id) + ' '
+                        #       + acad_stat)
                         ret1 = update_const_custom_fields(current_token,
                                                       str(field_id),
                                                       'Test',
