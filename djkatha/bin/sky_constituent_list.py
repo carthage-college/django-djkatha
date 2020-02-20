@@ -37,7 +37,6 @@ os.environ['ODBCINI'] = settings.ODBCINI
 os.environ['ONCONFIG'] = settings.ONCONFIG
 os.environ['INFORMIXSQLHOSTS'] = settings.INFORMIXSQLHOSTS
 
-
 # normally set as 'debug" in SETTINGS
 DEBUG = settings.INFORMIX_DEBUG
 desc = """
@@ -58,27 +57,28 @@ parser.add_argument(
 )
 """
     12/9/19 - The API call to get_constituent_list can be filtered by student
-      status and add date.   
-      So the process would involve getting a current list of those with 
-      a custom_field_category=Student Status where date added > whatever date
-      
-      Then I can write the CX id numbers and the Blackbaud ID numbers to a
-      file or table, read them back, and use the blackbaud ID to pass any 
-      changes to Blackbaud
-
-      The process would have to involve finding the status of active students
-      in CX, (Look for a change date...to limit the number.  Maybe audit table)
+         status and add date.   
+          
+         So the process would involve getting a current list of those with 
+         a custom_field_category=Student Status where date added > whatever date
+          
+         Then I can write the CX id numbers and the Blackbaud ID numbers to a
+         file or table, read them back, and use the blackbaud ID to pass any 
+         changes to Blackbaud
     
-      Then determine if the student is in Raiser's Edge by reading the list
-      just retrieved. 
-
-        Currently the student adds would be periodic OMatic processes, 
-        but I would possibly need to create the custom field record if 
-        OMatic doesn't create it 
+         The process would have to involve finding the status of active students
+         in CX, (Look for a change date...to limit the number.  Maybe audit table)
         
-        May be easiest to just purge the table and repopulate it periodically
-        What about graduations then?
-        
+         Then determine if the student is in Raiser's Edge by reading the list
+         just retrieved. 
+    
+         Currently the student adds would be periodic O-Matic processes, 
+         but I would possibly need to create the custom field record if 
+         O-Matic doesn't create it 
+           
+         May be easiest to just purge the table and repopulate it periodically
+         What about graduations then?
+            
       If not add student  ??,
           then add the custom field record  ???
       Else - find out of custom field record exists
@@ -91,7 +91,6 @@ parser.add_argument(
 """
 
 
-
 def fn_update_local(carth_id, bb_id):
     try:
 
@@ -100,7 +99,7 @@ def fn_update_local(carth_id, bb_id):
                 '''
         q_upd_args = (bb_id, carth_id)
         connection = get_connection(EARL)
-        print(q_upd_sql)
+        # print(q_upd_sql)
         with connection:
             cur = connection.cursor()
             cur.execute(q_upd_sql, q_upd_args)
@@ -108,7 +107,7 @@ def fn_update_local(carth_id, bb_id):
     except pyodbc.Error as err:
             # print("Error in fn_update_local:  " + str(err))
             sqlstate = err.args[0]
-            print(sqlstate)
+            # print(sqlstate)
             return 0
 
 
@@ -132,31 +131,26 @@ def main():
 
         # print(EARL)
         """-----Get a list of constituents with a custom field of 
-            Student Status-------"""
+            Student Status - STORE the id in cvid_rec-------"""
         """---We need this to match Carthage ID to Blackbaud ID------"""
 
-        searchtime = date.today() + timedelta(days=-100)
-        # print("Searchtime = " + str(searchtime))
-
-        """Doing this in reverse by necessity and for logic 
-           We only want constituents who have a student status
-           So we search for the bb_id for all who have one
-           THEN, we can go get the carthage id in a separate step if need be
-           We should be able to use a date range to avoid revisiting records
-           
+        """
            UPDATE 1/17/20  It will more likely be the case that we will get
            a csv list from advancement of the students added.  If so, we 
            can read that csv and find the BB_ID only for those students"""
 
+        searchtime = date.today() + timedelta(days=-10)
+        # print("Searchtime = " + str(searchtime))
+
         # API call to get BB ID
         x = get_constituents_custom_field_list(current_token, str(searchtime))
+        print(x)
         if x == 0:
-            print("No Data Returned")
+            print("No recent student entries in RE")
         else:
-            # print(x)
             for i in x['value']:
                 bb_id = i["parent_id"]
-
+                # Look for ID in cvid_rec
                 chk_sql = '''select cx_id, re_api_id from cvid_rec
                     where re_api_id = {}'''.format(i['parent_id'])
 
@@ -166,13 +160,18 @@ def main():
                 with connection:
                     data_result = xsql(chk_sql, connection, key='debug')
                     x = data_result.fetchone()
+
+                    # Create the cvid_rec if it doesn't exist - Will require
+                    # second call to API to retrieve the carthage id using
+                    # the blackbaud id
+
                     if x is None:
                         # print("Need to find CarthID for bb_id "
                         #       + str(bb_id))
                         carth_id = get_lookup_id(current_token, bb_id)
-                        # print(bb_id)
                         ret = fn_update_local(carth_id, bb_id)
                         # print(ret)
+
                     else:
                         # print("CVID Rec exists for" + str(x[0]))
                         # carth_id = x[0]
