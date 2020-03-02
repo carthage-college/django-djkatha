@@ -10,6 +10,8 @@ Python functions to
 import os
 import sys
 import argparse
+import datetime
+from datetime import date, timedelta
 
 
 # Note to self, keep this here
@@ -108,6 +110,17 @@ def main():
            -----------------------------------------------------------
         """
 
+        # datetime.today().strftime('%Y-%m-%d')
+
+        # dat = date.today()
+        # print(dat)
+        #
+        # dat = date.today() - timedelta(1)
+        # cache.set('lastrun', dat)
+        # x = cache.get('lastrun')
+        # print(x)
+
+
         statquery = '''select O.id, O.acst, O.audit_event, O.audit_timestamp,
                      N.id, N.acst, N.audit_event, N.audit_timestamp,
                      CR.cx_id, CR.re_api_id
@@ -119,7 +132,7 @@ def main():
                      JOIN cvid_rec CR
                      ON CR.cx_id = O.id
                      where N.audit_event != 'BU'
-                     and N.audit_timestamp > TODAY - 20
+                     and N.audit_timestamp > TODAY
                      and N.audit_timestamp = O.audit_timestamp
                      and CR.re_api_id is not null
             '''
