@@ -163,10 +163,10 @@ def get_const_custom_fields(current_token, id, category):
                     item_id = i['id']
                     # print("ID = " + i['id'])
                     # print("Category = " + i['category'])
-                    if 'comment' not in x['value']:
-                        print("Comment not entered")
-                    else:
-                        print("Comment = " + str(i['comment']))
+                    # if 'comment' not in x['value']:
+                    #     print("Comment not entered")
+                    # else:
+                    #     print("Comment = " + str(i['comment']))
                     # print("Date = " + i['date'])
                     # print("Date Added = " + i['date_added'])
                     # print("Date Modified = " + i['date_modified'])
