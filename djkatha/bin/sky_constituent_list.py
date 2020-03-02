@@ -144,7 +144,7 @@ def main():
 
         # API call to get BB ID
         x = get_constituents_custom_field_list(current_token, str(searchtime))
-        print(x)
+        # print(x)
         if x == 0:
             print("No recent student entries in RE")
         else:
