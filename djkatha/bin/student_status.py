@@ -122,20 +122,24 @@ def main():
 
 
         statquery = '''select O.id, O.acst, O.audit_event, O.audit_timestamp,
-                     N.id, N.acst, N.audit_event, N.audit_timestamp,
-                     CR.cx_id, CR.re_api_id
-                     from cars_audit:prog_enr_rec N
-                     left join cars_audit:prog_enr_rec O
-                     on O.id = N.id
-                     and O.acst != N.acst
-                     and O.audit_event = 'BU'
-                     JOIN cvid_rec CR
-                     ON CR.cx_id = O.id
-                     where N.audit_event != 'BU'
-                     and N.audit_timestamp > TODAY
-                     and N.audit_timestamp = O.audit_timestamp
-                     and CR.re_api_id is not null
-            '''
+                              N.id, N.acst, N.audit_event, N.audit_timestamp,
+                              CR.cx_id, CR.re_api_id, max(N.audit_timestamp)
+                              from cars_audit:prog_enr_rec N
+                              left join cars_audit:prog_enr_rec O
+                              on O.id = N.id
+                              and O.acst != N.acst
+                              and O.audit_event = 'BU'
+                              JOIN cvid_rec CR
+                              ON CR.cx_id = O.id
+                              where N.audit_event != 'BU'
+                              and N.id = 1479847
+                              --and N.audit_timestamp > TODAY - 30
+                              and N.audit_timestamp = O.audit_timestamp
+                              and CR.re_api_id is not null
+                              group by O.id, O.acst, O.audit_event, 
+                              O.audit_timestamp,
+                              N.id, N.acst, N.audit_event, N.audit_timestamp,
+                              CR.cx_id, CR.re_api_id'''
 
         # for testing...
 
@@ -146,7 +150,7 @@ def main():
         #     on AST.acst = PER.acst
         #     JOIN cvid_rec CR on
         #     CR.cx_id = PER.id
-        #     where PER.id in (1429768)'''
+        #     where PER.id in (1479847)'''
         print(statquery)
         # 2384
         connection = get_connection(EARL)
