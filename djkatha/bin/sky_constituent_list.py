@@ -100,6 +100,7 @@ def fn_update_local(carth_id, bb_id):
         q_upd_args = (bb_id, carth_id)
         connection = get_connection(EARL)
         # print(q_upd_sql)
+        print(carth_id)
         with connection:
             cur = connection.cursor()
             cur.execute(q_upd_sql, q_upd_args)
@@ -117,10 +118,10 @@ def main():
         global EARL
 
         # determines which database is being called from the command line
-        # if database == 'cars':
-        #     EARL = settings.INFORMIX
-        # if database == 'train':
-        EARL = settings.INFORMIX_ODBC_TRAIN
+        if database == 'cars':
+            EARL = settings.INFORMIX_ODBC
+        if database == 'train':
+            EARL = settings.INFORMIX_ODBC_TRAIN
         # if database == 'sandbox':
         #     EARL = settings.INFORMIX_ODBC_SANDBOX
 
@@ -129,7 +130,7 @@ def main():
         # print("Current Token = ")
         # print(current_token)
 
-        # print(EARL)
+        print(EARL)
         """-----Get a list of constituents with a custom field of 
             Student Status - STORE the id in cvid_rec-------"""
         """---We need this to match Carthage ID to Blackbaud ID------"""
@@ -139,7 +140,7 @@ def main():
            a csv list from advancement of the students added.  If so, we 
            can read that csv and find the BB_ID only for those students"""
 
-        searchtime = date.today() + timedelta(days=-10)
+        searchtime = date.today() + timedelta(days=-100)
         # print("Searchtime = " + str(searchtime))
 
         # API call to get BB ID
@@ -173,7 +174,7 @@ def main():
                         # print(ret)
 
                     else:
-                        # print("CVID Rec exists for" + str(x[0]))
+                        print("CVID Rec exists for" + str(x[0]))
                         # carth_id = x[0]
                         pass
 
