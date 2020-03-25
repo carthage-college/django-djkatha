@@ -12,6 +12,8 @@ import django
 import csv
 import arrow
 
+from djkatha.core.utilities import fn_write_error, fn_send_mail
+
 from datetime import datetime
 # Note to self, keep this here
 # django settings for shell environment
@@ -94,7 +96,7 @@ def api_post(current_token, url, data):
 
 
 def api_patch(current_token, url, data):
-    print("In api_patch")
+    # print("In api_patch")
     try:
         params = {'HOST': 'api.sky.blackbaud.com'}
         # status = 'Initial Value'
@@ -115,8 +117,8 @@ def api_patch(current_token, url, data):
         return status
     except Exception as e:
         print("Error in api_patch:  " + str(e))
-        # fn_write_error("Error in api_patch.py - Main: "
-        #                + str(e))
+        fn_write_error("Error in sky_api_calls.py api_patch: "
+                       + str(e))
         return 0
 
 
@@ -176,9 +178,11 @@ def get_const_custom_fields(current_token, id, category):
                     return item_id
 
     except Exception as e:
-        print("Error in get_const_custom_fields:  " + str(e))
-        # fn_write_error("Error in misc_fees.py - Main: "
-        #                + str(e))
+        print("Error in sky_api_calls.py - get_const_custom_fields "
+                       "for: " + str(id) + ", " + str(e))
+        fn_write_error("Error in sky_api_calls.py - get_const_custom_fields "
+                       "for: " + str(id) + ", " + str(e))
+
         return 0
 
 
@@ -208,8 +212,8 @@ def get_relationships(current_token, id):
             return 1
     except Exception as e:
         print("Error in get_relationships:  " + str(e))
-        # fn_write_error("Error in misc_fees.py - Main: "
-        #                + str(e))
+        fn_write_error("Error in sky_api_calls.py - get_relationships: "
+                       + str(e))
         return 0
 
 
@@ -235,7 +239,7 @@ def get_relationship_types(current_token):
 
 
 def get_custom_fields(current_token):
-    print("In get_custom_fields")
+    # print("In get_custom_fields")
     urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents/' \
             'customfields/categories/details'
 
@@ -263,7 +267,11 @@ def get_constituents_custom_field_list(current_token, searchtime):
     print(z)
 
     # 2020-01-05T12:00:00.0000000-04:00 THis works!
-
+    """This calls the API Constituent Custom Field List (All Constituents)
+        Uses the date added as a search param, as well as the custom field
+        for student status.  Can be limited to a particular number of records.
+        Offset param will skip the first N number of records
+        Date added must be in format 2020-01-05T12:00:00.0000000-04:00"""
     urlst = "https://api.sky.blackbaud.com/constituent/v1/constituents/" \
             "customfields?date_added=" + searchtime + "" \
             "&category=Student Status" \
