@@ -140,7 +140,7 @@ def main():
            a csv list from advancement of the students added.  If so, we 
            can read that csv and find the BB_ID only for those students"""
 
-        searchtime = date.today() + timedelta(days=-100)
+        searchtime = date.today() + timedelta(days=-10)
         # print("Searchtime = " + str(searchtime))
 
         # API call to get BB ID
