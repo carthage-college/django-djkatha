@@ -35,6 +35,7 @@ os.environ['INFORMIXSQLHOSTS'] = settings.INFORMIXSQLHOSTS
 import sky_constituent_list
 from django.conf import settings
 from django.core.cache import cache
+from djkatha.core.utilities import fn_write_error, fn_send_mail
 from djkatha.core.sky_api_auth import fn_do_token
 from djkatha.core.sky_api_calls import api_get, get_const_custom_fields, \
     get_constituent_id, set_const_custom_field, update_const_custom_fields, \
@@ -73,8 +74,8 @@ def main():
             EARL = settings.INFORMIX_ODBC
         if database == 'train':
             EARL = settings.INFORMIX_ODBC_TRAIN
-        if database == 'sandbox':
-            EARL = settings.INFORMIX_ODBC_SANDBOX
+        # if database == 'sandbox':
+        #     EARL = settings.INFORMIX_ODBC_SANDBOX
 
         # else:
             # # this will raise an error when we call get_engine()
@@ -82,7 +83,7 @@ def main():
             # care of this scenario and we will never arrive here.
             # EARL = None
         # establish database connection
-        # print(EARL)
+        print(EARL)
 
         """"--------GET THE TOKEN------------------"""
         current_token = fn_do_token()
@@ -97,7 +98,7 @@ def main():
         """
         # Probably should change the other file to a class or whatever if I
         # do this permanently
-        sky_constituent_list.main()
+        # sky_constituent_list.main()
 
         """
            -----------------------------------------------------------
@@ -121,37 +122,83 @@ def main():
         # print(x)
 
 
-        statquery = '''select O.id, O.acst, O.audit_event, O.audit_timestamp,
-                              N.id, N.acst, N.audit_event, N.audit_timestamp,
-                              CR.cx_id, CR.re_api_id, max(N.audit_timestamp)
-                              from cars_audit:prog_enr_rec N
-                              left join cars_audit:prog_enr_rec O
-                              on O.id = N.id
-                              and O.acst != N.acst
-                              and O.audit_event = 'BU'
-                              JOIN cvid_rec CR
-                              ON CR.cx_id = O.id
-                              where N.audit_event != 'BU'
-                              and N.id = 1479847
-                              --and N.audit_timestamp > TODAY - 30
-                              and N.audit_timestamp = O.audit_timestamp
-                              and CR.re_api_id is not null
-                              group by O.id, O.acst, O.audit_event, 
-                              O.audit_timestamp,
-                              N.id, N.acst, N.audit_event, N.audit_timestamp,
-                              CR.cx_id, CR.re_api_id'''
+        """THis query looks for recent changes in the student status.  
+            We do not want to use any records that do NOT have an re_api_id 
+           value.  It only applies to RE entered students at present"""
 
-        # for testing...
+        # statquery = '''
+        #     select O.id, O.acst, O.audit_event, TO_CHAR(O.audit_timestamp),
+        #         N.id, N.acst, N.audit_event, N.audit_timestamp,
+        #         CR.cx_id, CR.re_api_id, max(N.audit_timestamp)
+        #         from cars_audit:prog_enr_rec N
+        #         left join cars_audit:prog_enr_rec O
+        #         on O.id = N.id
+        #         and O.acst != N.acst
+        #         and O.audit_event in ('BU', 'I')
+        #     left JOIN cvid_rec CR
+        #         ON CR.cx_id = O.id
+        #     where
+        #         (N.audit_event != 'BU'
+        #         and N.audit_timestamp = O.audit_timestamp)
+        #         --and N.audit_timestamp > TODAY - 3000
+        #         and CR.re_api_id is not null
+        #         and N.id = 1546436
+        #     group by O.id, O.acst, O.audit_event, O.audit_timestamp,
+        #         N.id, N.acst, N.audit_event, N.audit_timestamp,
+        #         CR.cx_id, CR.re_api_id
+        #
+        #     UNION
+        #
+        #     select 0 id, '' acst, '' audit_event, '' audit_timestamp,
+        #         N.id, N.acst, N.audit_event, N.audit_timestamp,
+        #         CR.cx_id, CR.re_api_id, max(N.audit_timestamp)
+        #         from cars_audit:prog_enr_rec N
+        #
+        #     left JOIN cvid_rec CR
+        #         ON CR.cx_id = N.id
+        #     where
+        #         (N.audit_event = 'I')
+        #         and N.audit_timestamp > TODAY - 3000
+        #         --and CR.re_api_id is not null
+        #         and N.id = 1546436
+        #     group by id, acst, audit_event, audit_timestamp,
+        #         N.id, N.acst, N.audit_event, N.audit_timestamp,
+        #         CR.cx_id, CR.re_api_id;'''
 
-        # statquery = '''select PER.id, PER.acst, 'BU', '', PER.id, PER.acst,
-        #     'AU', '', PER.id, CR.re_api_id
-        #     from prog_enr_rec PER
-        #     JOIN acad_stat_table AST
-        #     on AST.acst = PER.acst
-        #     JOIN cvid_rec CR on
-        #     CR.cx_id = PER.id
-        #     where PER.id in (1479847)'''
-        print(statquery)
+        # for initial load...
+        """For initial loads FIRST TIME ONLY
+            To run a mass process looking back in time, best to avoid the
+            audit records.  Too hard to locate most recent"""
+        # select
+        # O.id, O.acst, O.audit_event, TO_CHAR(O.audit_timestamp),
+        #         N.id, N.acst, N.audit_event, N.audit_timestamp,
+        #         CR.cx_id, CR.re_api_id, max(N.audit_timestamp)
+        statquery = '''select PER.id, PER.ACST, '', '', CVR.cx_id, 
+                PER.acst, '','', CVR.cx_id, CVR.re_api_id, ''
+                from cvid_rec CVR
+                JOIN prog_enr_rec PER
+                on CVR.cx_id = PER.id
+                where CVR.re_api_id is not null
+                AND PER.acst not in ('PAST')
+                AND PER.cl = 'SO'
+                and PER.id = 1518287'''
+        # print(statquery)
+
+        """For periodic multi student runs, only want status for the 
+        current term"""
+        # statquery = '''select SAR.id, SAR.ACST, '', CVR.cx_id,
+        #         SAR.acst, '','', CVR.cx_id, CVR.re_api_id, ''
+        #         from cvid_rec CVR
+        #         JOIN STU_ACAD_REC SAR
+        #         on CVR.cx_id = SAR.id
+        #         where CVR.re_api_id is not null
+        #         AND SAR.acst not in ('PAST')
+        #         and SAR.yr = 2020
+        #         AND SAR.sess = 'RC'
+        #         and SAR.id = 1546436'''
+        # print(statquery)
+
+        # print(statquery)
         # 2384
         connection = get_connection(EARL)
         with connection:
@@ -171,11 +218,11 @@ def main():
                 CHANGES FOR ANY OTHER STUDENTS
                 -----------------------------------------------------------
 
-                  Look for student and status in local table
-                  Else look for student and status at BB via API
-                  Add to BB if necessary (THIS WILL BE DONE BY OMATIC)
-                  Add or update status in BB
-                  Update local table if necessary
+                Look for student and status in local table
+                Else look for student and status at BB via API
+                Add to BB if necessary (THIS WILL BE DONE BY OMATIC)
+                Add or update status in BB
+                Update local table if necessary
                 """
                 #         '''------------------------------------------------
                 #           --3-UPDATE THE CUSTOM STUDENT STATUS FIELD-------
@@ -186,13 +233,21 @@ def main():
                     # Get the row id of the custom field record
                     field_id = get_const_custom_fields(current_token, bb_id,
                                                   'Student Status')
-
                     print("set custom fields: " + str(carth_id) + ", "
-                          + acad_stat)
+                               + acad_stat)
 
                     """ret is the id of the custom record, not the student"""
                     if field_id == 0:
-                        # print('Add new record?')
+                        print("Error in student_status.py - for: "
+                                       + str(carth_id) + ", Unable to get the "
+                                                         "custom field")
+                        fn_write_error("Error in student_status.py - for: "
+                                   + str(carth_id) + ", Unable to get the "
+                                   "custom field")
+                        fn_send_mail(settings.BB_SKY_TO_EMAIL,
+                            settings.BB_SKY_FROM_EMAIL, "SKY API ERROR", "Error in "
+                            "student_status.py - for: " +  str(carth_id)
+                            + ", Unable to get the custom field")
                         pass
                     else:
                         # print('Update record ' + str(field_id) + ' '
@@ -207,8 +262,11 @@ def main():
 
     except Exception as e:
         print("Error in main:  " + str(e))
-        # fn_write_error("Error in misc_fees.py - Main: "
-        #                + e.message)
+        fn_write_error("Error in student_status.py - Main: "
+                       + repr(e))
+        # fn_send_mail(settings.BB_SKY_TO_EMAIL, settings.BB_SKY_FROM_EMAIL,
+        #          "Error in student_status.py - Main, Error = " + repr(e),
+        #          "Error in cc_adp_rec.py")
 
 
 if __name__ == "__main__":
