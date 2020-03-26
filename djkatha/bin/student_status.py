@@ -83,11 +83,10 @@ def main():
             # care of this scenario and we will never arrive here.
             # EARL = None
         # establish database connection
-        print(EARL)
+        # print(EARL)
 
         """"--------GET THE TOKEN------------------"""
         current_token = fn_do_token()
-        # print("Current Token = ")
         # print(current_token)
 
         """
@@ -165,37 +164,22 @@ def main():
         #         N.id, N.acst, N.audit_event, N.audit_timestamp,
         #         CR.cx_id, CR.re_api_id;'''
 
-        # for initial load...
-        """For initial loads FIRST TIME ONLY
-            To run a mass process looking back in time, best to avoid the
-            audit records.  Too hard to locate most recent"""
-        # select
-        # O.id, O.acst, O.audit_event, TO_CHAR(O.audit_timestamp),
-        #         N.id, N.acst, N.audit_event, N.audit_timestamp,
-        #         CR.cx_id, CR.re_api_id, max(N.audit_timestamp)
-        statquery = '''select PER.id, PER.ACST, '', '', CVR.cx_id, 
-                PER.acst, '','', CVR.cx_id, CVR.re_api_id, ''
-                from cvid_rec CVR
-                JOIN prog_enr_rec PER
-                on CVR.cx_id = PER.id
-                where CVR.re_api_id is not null
-                AND PER.acst not in ('PAST')
-                AND PER.cl = 'SO'
-                and PER.id = 1518287'''
-        # print(statquery)
 
         """For periodic multi student runs, only want status for the 
         current term"""
-        # statquery = '''select SAR.id, SAR.ACST, '', CVR.cx_id,
-        #         SAR.acst, '','', CVR.cx_id, CVR.re_api_id, ''
-        #         from cvid_rec CVR
-        #         JOIN STU_ACAD_REC SAR
-        #         on CVR.cx_id = SAR.id
-        #         where CVR.re_api_id is not null
-        #         AND SAR.acst not in ('PAST')
-        #         and SAR.yr = 2020
-        #         AND SAR.sess = 'RC'
-        #         and SAR.id = 1546436'''
+        statquery = '''select SAR.id, SAR.ACST, '', '', CVR.cx_id,
+                         SAR.acst, '','', CVR.cx_id, CVR.re_api_id, ''
+                         ,SAR.yr, SAR.sess, SAR.cl
+                         from cvid_rec CVR
+                         JOIN STU_ACAD_REC SAR
+                         on CVR.cx_id = SAR.id
+                         where CVR.re_api_id is not null
+                         AND SAR.acst not in ('PAST')
+                         and SAR.yr in (Select yr from cursessyr_vw)
+                         and SAR.sess in (select sess from cursessyr_vw)
+                         AND SAR.cl= 'SR'
+                         -- and SAR.id = 1361547
+'''
         # print(statquery)
 
         # print(statquery)
@@ -229,7 +213,7 @@ def main():
                 #         ---------------------------------------------------
                 #         '''
                 if bb_id != 0:
-                    print("Update custom field")
+                    # print("Update custom field")
                     # Get the row id of the custom field record
                     field_id = get_const_custom_fields(current_token, bb_id,
                                                   'Student Status')
@@ -256,7 +240,7 @@ def main():
                                                       str(field_id),
                                                       'CX Status Update',
                                                       acad_stat)
-                        print(ret1)
+                        # print(ret1)
                 else:
                     print("Nobody home")
 
@@ -264,9 +248,9 @@ def main():
         print("Error in main:  " + str(e))
         fn_write_error("Error in student_status.py - Main: "
                        + repr(e))
-        # fn_send_mail(settings.BB_SKY_TO_EMAIL, settings.BB_SKY_FROM_EMAIL,
-        #          "Error in student_status.py - Main, Error = " + repr(e),
-        #          "Error in cc_adp_rec.py")
+        fn_send_mail(settings.BB_SKY_TO_EMAIL,
+                     settings.BB_SKY_FROM_EMAIL, "SKY API ERROR", "Error in "
+                                "student_status.py - for: " + + repr(e))
 
 
 if __name__ == "__main__":
