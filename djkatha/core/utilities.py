@@ -51,6 +51,7 @@ def fn_send_mail(to, frum, body, subject):
     --email to addresses may come as list
     """
 
+    server = smtplib.SMTP('localhost')
     try:
         msg = MIMEText(body)
         msg['To'] = to
@@ -59,7 +60,6 @@ def fn_send_mail(to, frum, body, subject):
         txt = msg.as_string()
 
         # print("ready to send")
-        server = smtplib.SMTP('localhost')
         # show communication with the server
         # if debug:
         #     server.set_debuglevel(True)
@@ -67,16 +67,14 @@ def fn_send_mail(to, frum, body, subject):
         # print(msg['From'])
         server.sendmail(frum, to.split(','), txt)
 
-    except Exception as e:
-        print(
-                "Error in Raiser's Edge utilities.py fn_send_mail:  " + repr(e))
-        # fn_write_error(
-        #     "Error in assign_notify.py:" + repr(e))
-
     finally:
         server.quit()
         # print("Done")
         pass
+
+
+
+
 
 
 def fn_clear_logger():
