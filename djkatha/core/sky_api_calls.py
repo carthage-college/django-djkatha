@@ -63,8 +63,8 @@ def api_get(current_token, url):
 
     except Exception as e:
         print("Error in api_get:  " + str(e))
-        # fn_write_error("Error in api_get - Main: "
-        #                + str(e))
+        fn_write_error("Error in sky_api_calls.py api_get: "
+                       + str(e))
         return 0
 
 
@@ -90,8 +90,10 @@ def api_post(current_token, url, data):
         return status
     except Exception as e:
         print("Error in api_post:  " + str(e))
-        # fn_write_error("Error in api_post.py - Main: "
-        #                + str(e))
+
+        fn_write_error("Error in sky_api_calls.py api_post: "
+                       + str(e))
+
         return 0
 
 
@@ -140,13 +142,13 @@ def api_delete(current_token, url):
         return status
     except Exception as e:
         print("Error in api_delete:  " + str(e))
-        # fn_write_error("Error in api_delete.py - Main: "
-        #                + str(e))
+        fn_write_error("Error in sky_api_calls.py api_delete: "
+                       + str(e))
         return 0
 
 
 def get_const_custom_fields(current_token, id, category):
-    print("In get_const_custom_fields")
+    # print("In get_const_custom_fields")
     try:
         urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents/' \
                 + str(id) + '/customfields'
@@ -232,8 +234,8 @@ def get_relationship_types(current_token):
 
     except Exception as e:
         print("Error in get_relationships:  " + str(e))
-        # fn_write_error("Error in misc_fees.py - Main: "
-        #                + str(e))
+        fn_write_error("Error in sky_api_calls.py - get_relationship_types: "
+                       + str(e))
         return 0
 
 
@@ -253,6 +255,7 @@ def get_custom_fields(current_token):
             # print(i['name'])
             # print(i['type'])
         return 1
+
 
 def get_constituents_custom_field_list(current_token, searchtime):
 
@@ -277,19 +280,24 @@ def get_constituents_custom_field_list(current_token, searchtime):
             "&category=Student Status" \
             "&limit=1500&" \
             "offset=600"
-
-    # print(urlst)
-    x = api_get(current_token, urlst)
-    return x
-    # if x == 0:
-    #     print("NO DATA")
-    #     return 0
-    # else:
-    #     for i in x['value']:
-    #         # print(i)
-    #         print(i['parent_id'])
-    #         print(i['value'])
-    #     return 1
+    try:
+        # print(urlst)
+        x = api_get(current_token, urlst)
+        return x
+        # if x == 0:
+        #     print("NO DATA")
+        #     return 0
+        # else:
+        #     for i in x['value']:
+        #         # print(i)
+        #         print(i['parent_id'])
+        #         print(i['value'])
+        #     return 1
+    except Exception as e:
+        print("Error in get_relationships:  " + str(e))
+        fn_write_error("Error in sky_api_calls.py - "
+                       "get_constituents_custom_field_list: " + str(e))
+        return 0
 
 
 
@@ -311,8 +319,8 @@ def get_custom_field_value(current_token, category):
             return 1
     except Exception as e:
         print("Error in get_custom_field_value:  " + str(e))
-        # fn_write_error("Error in misc_fees.py - Main: "
-        #                + str(e))
+        fn_write_error("Error in sky_api_calls.py - "
+                       "get_custom_field_value: " + str(e))
         return 0
 
 
@@ -338,8 +346,8 @@ def get_constituent_id(current_token, carthid):
 
     except Exception as e:
         print("Error in get_constituent_id:  " + str(e))
-        # fn_write_error("Error in get_constituent_id.py - Main: "
-        #                + str(e))
+        fn_write_error("Error in sky_api_calls.py - "
+                       "get_constituent_id: " + str(e))
         return 0
 
 
@@ -360,8 +368,8 @@ def get_lookup_id(current_token, bb_id):
 
     except Exception as e:
         print("Error in get_lookup_id:  " + str(e))
-        # fn_write_error("Error in get_lookup_id.py - Main: "
-        #                + str(e))
+        fn_write_error("Error in sky_api_calls.py - "
+                       "get_lookup_id: " + str(e))
         return 0
 
 
@@ -393,8 +401,8 @@ def get_constituent_custom_fields(current_token, bb_id):
             return x
     except Exception as e:
         print("Error in get_constituent_id:  " + str(e))
-        # fn_write_error("Error in get_constituent_id.py - Main: "
-        #                + str(e))
+        fn_write_error("Error in sky_api_calls.py - "
+                       "get_constituent_custom_fields: " + str(e))
         return 0
 
 
@@ -448,8 +456,8 @@ def get_constituent_list(current_token, searchtime):
             return x
     except Exception as e:
         print("Error in get_constituent_id:  " + str(e))
-        # fn_write_error("Error in get_constituent_id.py - Main: "
-        #                + str(e))
+        fn_write_error("Error in sky_api_calls.py - "
+                       "get_constituent_list: " + str(e))
         return 0
 
 def delete_const_custom_fields(current_token, itemid):
@@ -467,14 +475,14 @@ def delete_const_custom_fields(current_token, itemid):
 
     except Exception as e:
         print("Error in delete_const_custom_fields:  " + str(e))
-        # fn_write_error("Error in delete_const_custom_fields ")
-        #                + str(e))
+        fn_write_error("Error in sky_api_calls.py - "
+                       "delete_const_custom_fields: " + str(e))
         return 0
 
 
 def update_const_custom_fields(current_token, itemid, comment, val):
     try:
-        print("In update_const_custom_fields")
+        # print("In update_const_custom_fields")
         # print(itemid)
         urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents/' \
                 'customfields/' + itemid
@@ -503,8 +511,8 @@ def update_const_custom_fields(current_token, itemid, comment, val):
 
     except Exception as e:
         print("Error in update_const_custom_fields:  " + str(e))
-        # fn_write_error("Error in update_const_custom_fields ")
-        #                + str(e))
+        fn_write_error("Error in sky_api_calls.py - "
+                       "update_const_custom_fields: " + str(e))
         return 0
 
 
@@ -513,25 +521,29 @@ def set_const_custom_field(current_token, id, value, category, comment):
     print("In set_const_custom_field")
     urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents/' \
             'customfields'
+    try:
+        # now = datetime.now()
+        # date_time = now.strftime("%Y-%m-%dT%H:%M:%S")
 
-    # now = datetime.now()
-    # date_time = now.strftime("%Y-%m-%dT%H:%M:%S")
+        utc = arrow.utcnow()
+        # print(utc.to('US/Eastern'))
+        date_time = utc.to('US/Eastern')
 
-    utc = arrow.utcnow()
-    # print(utc.to('US/Eastern'))
-    date_time = utc.to('US/Eastern')
+        # Constituent ID is passed in as Parent ID
+        body = {'category': category, 'comment': comment, 'date': date_time,
+                'parent_id': id, 'value': value}
 
-    # Constituent ID is passed in as Parent ID
-    body = {'category': category, 'comment': comment, 'date': date_time,
-            'parent_id': id, 'value': value}
+        # print(urlst, body)
 
-    # print(urlst, body)
-
-    # x = api_post(current_token, urlst, body)
-    # if x == 0:
-    #     print("Post Failure")
-    #     return 0
-    # else:
-    #     return 1
-
+        # x = api_post(current_token, urlst, body)
+        # if x == 0:
+        #     print("Post Failure")
+        #     return 0
+        # else:
+        #     return 1
+    except Exception as e:
+        print("Error in update_const_custom_fields:  " + str(e))
+        fn_write_error("Error in sky_api_calls.py - "
+                       "set_const_custom_field: " + str(e))
+        return 0
 
