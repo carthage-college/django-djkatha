@@ -26,7 +26,7 @@ from django.core.cache import cache
 def api_get(current_token, url):
     # print("In api_get")
     # print(url)
-
+ 
     try:
         params = {'HOST': 'api.sky.blackbaud.com'}
         status = 0
@@ -278,10 +278,9 @@ def get_constituents_custom_field_list(current_token, searchtime):
     urlst = "https://api.sky.blackbaud.com/constituent/v1/constituents/" \
             "customfields?date_added=" + searchtime + "" \
             "&category=Student Status" \
-            "&limit=1500&" \
-            "offset=600"
+            "&limit=1500&"
     try:
-        # print(urlst)
+        print(urlst)
         x = api_get(current_token, urlst)
         return x
         # if x == 0:
