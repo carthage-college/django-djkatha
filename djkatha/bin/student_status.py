@@ -95,6 +95,9 @@ def main():
             to make sure the cvid_rec entries are current
             -----------------------------------------------------------
         """
+        os.system("python sky_constituent_list.py --database=cars")
+
+
         # Probably should change the other file to a class or whatever if I
         # do this permanently
         # sky_constituent_list.main()
@@ -124,62 +127,63 @@ def main():
         """THis query looks for recent changes in the student status.  
             We do not want to use any records that do NOT have an re_api_id 
            value.  It only applies to RE entered students at present"""
+ 
+        statquery = '''
+            select O.id, O.acst, O.audit_event, TO_CHAR(O.audit_timestamp),
+                N.id, N.acst, N.audit_event, N.audit_timestamp,
+                CR.cx_id, CR.re_api_id, max(N.audit_timestamp)
+                from cars_audit:prog_enr_rec N
+                left join cars_audit:prog_enr_rec O
+                on O.id = N.id
+                and O.acst != N.acst
+                and O.audit_event in ('BU', 'I')
+            left JOIN cvid_rec CR
+                ON CR.cx_id = O.id
+            where
+                (N.audit_event != 'BU'
+                and N.audit_timestamp = O.audit_timestamp)
+                --and N.audit_timestamp > TODAY - 30
+                --and CR.re_api_id is not null
+                and N.id = 1468587
+            group by O.id, O.acst, O.audit_event, O.audit_timestamp,
+                N.id, N.acst, N.audit_event, N.audit_timestamp,
+                CR.cx_id, CR.re_api_id
 
-        # statquery = '''
-        #     select O.id, O.acst, O.audit_event, TO_CHAR(O.audit_timestamp),
-        #         N.id, N.acst, N.audit_event, N.audit_timestamp,
-        #         CR.cx_id, CR.re_api_id, max(N.audit_timestamp)
-        #         from cars_audit:prog_enr_rec N
-        #         left join cars_audit:prog_enr_rec O
-        #         on O.id = N.id
-        #         and O.acst != N.acst
-        #         and O.audit_event in ('BU', 'I')
-        #     left JOIN cvid_rec CR
-        #         ON CR.cx_id = O.id
-        #     where
-        #         (N.audit_event != 'BU'
-        #         and N.audit_timestamp = O.audit_timestamp)
-        #         --and N.audit_timestamp > TODAY - 3000
-        #         and CR.re_api_id is not null
-        #         and N.id = 1546436
-        #     group by O.id, O.acst, O.audit_event, O.audit_timestamp,
-        #         N.id, N.acst, N.audit_event, N.audit_timestamp,
-        #         CR.cx_id, CR.re_api_id
-        #
-        #     UNION
-        #
-        #     select 0 id, '' acst, '' audit_event, '' audit_timestamp,
-        #         N.id, N.acst, N.audit_event, N.audit_timestamp,
-        #         CR.cx_id, CR.re_api_id, max(N.audit_timestamp)
-        #         from cars_audit:prog_enr_rec N
-        #
-        #     left JOIN cvid_rec CR
-        #         ON CR.cx_id = N.id
-        #     where
-        #         (N.audit_event = 'I')
-        #         and N.audit_timestamp > TODAY - 3000
-        #         --and CR.re_api_id is not null
-        #         and N.id = 1546436
-        #     group by id, acst, audit_event, audit_timestamp,
-        #         N.id, N.acst, N.audit_event, N.audit_timestamp,
-        #         CR.cx_id, CR.re_api_id;'''
+            UNION
+
+            select 0 id, '' acst, '' audit_event, '' audit_timestamp,
+                N.id, N.acst, N.audit_event, N.audit_timestamp,
+                CR.cx_id, CR.re_api_id, max(N.audit_timestamp)
+                from cars_audit:prog_enr_rec N
+
+            left JOIN cvid_rec CR
+                ON CR.cx_id = N.id
+            where
+                (N.audit_event = 'I')
+                and N.audit_timestamp > TODAY - 30
+                and (CR.re_api_id is not null)
+                --and N.id = 1468649
+            group by id, acst, audit_event, audit_timestamp,
+                N.id, N.acst, N.audit_event, N.audit_timestamp,
+                CR.cx_id, CR.re_api_id;
+            '''
 
 
         """For periodic multi student runs, only want status for the 
         current term"""
-        statquery = '''select SAR.id, SAR.ACST, '', '', CVR.cx_id,
-                         SAR.acst, '','', CVR.cx_id, CVR.re_api_id, ''
-                         ,SAR.yr, SAR.sess, SAR.cl
-                         from cvid_rec CVR
-                         JOIN STU_ACAD_REC SAR
-                         on CVR.cx_id = SAR.id
-                         where CVR.re_api_id is not null
-                         AND SAR.acst not in ('PAST')
-                         and SAR.yr in (Select yr from cursessyr_vw)
-                         and SAR.sess in (select sess from cursessyr_vw)
-                         AND SAR.cl= 'SR'
-                         -- and SAR.id = 1361547
-'''
+        # statquery = '''select SAR.id, SAR.ACST, '', '', CVR.cx_id,
+        #                  SAR.acst, '','', CVR.cx_id, CVR.re_api_id, ''
+        #                  ,SAR.yr, SAR.sess, SAR.cl
+        #                  from cvid_rec CVR
+        #                  JOIN STU_ACAD_REC SAR
+        #                  on CVR.cx_id = SAR.id
+        #                  where CVR.re_api_id is not null
+        #                  AND SAR.acst not in ('PAST')
+        #                  and SAR.yr in (Select yr from cursessyr_vw)
+        #                  and SAR.sess in (select sess from cursessyr_vw)
+        #                  AND SAR.cl= 'SR'
+        #                  and SAR.id = 1488864
+        #     '''
         # print(statquery)
 
         # print(statquery)
@@ -189,8 +193,8 @@ def main():
             data_result = xsql(statquery, connection).fetchall()
             ret = list(data_result)
             for i in ret:
-                print(str(i[0]) + " " + i[5] + " " + str(i[9]))
-                carth_id = i[0]
+                print(str(i[8]) + " " + i[5] + " " + str(i[9]))
+                carth_id = i[8]
                 acad_stat = i[5]
                 bb_id = i[9]
                 # print(bb_id)
