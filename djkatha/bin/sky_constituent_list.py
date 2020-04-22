@@ -6,7 +6,7 @@ Python functions to
     b) Make subsequent refreshes and updates to the SKYApi authentication
     based on tokens in the files.
 """
-
+ 
 # import requests
 import sys
 import os
@@ -130,7 +130,7 @@ def main():
         # print("Current Token = ")
         # print(current_token)
 
-        print(EARL)
+        # print(EARL)
         """-----Get a list of constituents with a custom field of 
             Student Status - STORE the id in cvid_rec-------"""
         """---We need this to match Carthage ID to Blackbaud ID------"""
@@ -140,17 +140,19 @@ def main():
            a csv list from advancement of the students added.  If so, we 
            can read that csv and find the BB_ID only for those students"""
 
-        searchtime = date.today() + timedelta(days=-10)
-        # print("Searchtime = " + str(searchtime))
+        searchtime = date.today() + timedelta(days=-30)
+        print("Searchtime = " + str(searchtime))
 
         # API call to get BB ID
         x = get_constituents_custom_field_list(current_token, str(searchtime))
-        # print(x)
+        # print(x['value'])
         if x == 0:
             print("No recent student entries in RE")
         else:
+            # print(x['value'])
             for i in x['value']:
                 bb_id = i["parent_id"]
+                print(bb_id)
                 # Look for ID in cvid_rec
                 chk_sql = '''select cx_id, re_api_id from cvid_rec
                     where re_api_id = {}'''.format(i['parent_id'])
@@ -171,7 +173,7 @@ def main():
                         #       + str(bb_id))
                         carth_id = get_lookup_id(current_token, bb_id)
                         ret = fn_update_local(carth_id, bb_id)
-                        # print(ret)
+                        print(ret)
 
                     else:
                         print("CVID Rec exists for" + str(x[0]))
