@@ -95,7 +95,7 @@ def main():
             to make sure the cvid_rec entries are current
             -----------------------------------------------------------
         """
-        os.system("python sky_constituent_list.py --database=cars")
+        # os.system("python sky_constituent_list.py --database=cars")
 
 
         # Probably should change the other file to a class or whatever if I
@@ -142,7 +142,7 @@ def main():
             where
                 (N.audit_event != 'BU'
                 and N.audit_timestamp = O.audit_timestamp)
-                --and N.audit_timestamp > TODAY - 30
+                --and N.audit_timestamp > TODAY - 3
                 --and CR.re_api_id is not null
                 and N.id = 1468587
             group by O.id, O.acst, O.audit_event, O.audit_timestamp,
@@ -160,7 +160,7 @@ def main():
                 ON CR.cx_id = N.id
             where
                 (N.audit_event = 'I')
-                and N.audit_timestamp > TODAY - 30
+                and N.audit_timestamp > TODAY - 3
                 and (CR.re_api_id is not null)
                 --and N.id = 1468649
             group by id, acst, audit_event, audit_timestamp,
@@ -171,20 +171,23 @@ def main():
 
         """For periodic multi student runs, only want status for the 
         current term"""
+
+
         # statquery = '''select SAR.id, SAR.ACST, '', '', CVR.cx_id,
-        #                  SAR.acst, '','', CVR.cx_id, CVR.re_api_id, ''
-        #                  ,SAR.yr, SAR.sess, SAR.cl
-        #                  from cvid_rec CVR
-        #                  JOIN STU_ACAD_REC SAR
-        #                  on CVR.cx_id = SAR.id
-        #                  where CVR.re_api_id is not null
-        #                  AND SAR.acst not in ('PAST')
-        #                  and SAR.yr in (Select yr from cursessyr_vw)
-        #                  and SAR.sess in (select sess from cursessyr_vw)
-        #                  AND SAR.cl= 'SR'
-        #                  and SAR.id = 1488864
-        #     '''
+        #                         SAR.acst, '','', CVR.cx_id, CVR.re_api_id, ''
+        #                         ,SAR.yr, SAR.sess, SAR.cl
+        #                         from cvid_rec CVR
+        #                         JOIN STU_ACAD_REC SAR
+        #                         on CVR.cx_id = SAR.id
+        #                         where CVR.re_api_id is not null
+        #                         AND SAR.acst not in ('PAST')
+        #                         and SAR.yr in (Select yr from cursessyr_vw)
+        #                         and SAR.sess in (select sess from cursessyr_vw)
+        #                         AND SAR.cl     = 'SR'
+        #                         --and SAR.id = 1490558
+        #            '''
         # print(statquery)
+
 
         # print(statquery)
         # 2384
