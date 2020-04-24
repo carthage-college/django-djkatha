@@ -279,6 +279,8 @@ def get_constituents_custom_field_list(current_token, searchtime):
             "customfields?date_added=" + searchtime + "" \
             "&category=Student Status" \
             "&limit=1500&"
+    # urlst = "https://api.sky.blackbaud.com/constituent/v1/constituents/" \
+    #         "customfields?category=Student Status&value=Blank"
     try:
         print(urlst)
         x = api_get(current_token, urlst)
