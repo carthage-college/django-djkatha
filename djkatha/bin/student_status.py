@@ -142,9 +142,9 @@ def main():
             where
                 (N.audit_event != 'BU'
                 and N.audit_timestamp = O.audit_timestamp)
-                --and N.audit_timestamp > TODAY - 3
-                --and CR.re_api_id is not null
-                and N.id = 1468587
+                and N.audit_timestamp > TODAY - 3
+                and CR.re_api_id is not null
+                --and N.id = 1468587
             group by O.id, O.acst, O.audit_event, O.audit_timestamp,
                 N.id, N.acst, N.audit_event, N.audit_timestamp,
                 CR.cx_id, CR.re_api_id
