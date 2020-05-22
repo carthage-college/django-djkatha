@@ -127,7 +127,15 @@ def main():
         """THis query looks for recent changes in the student status.  
             We do not want to use any records that do NOT have an re_api_id 
            value.  It only applies to RE entered students at present"""
- 
+
+        # # Monday = 0, Sunday = 6
+        # dayofwk = datetime.today().weekday()
+        # print(dayofwk)
+        # dayofwk = 5
+        # print(dayofwk)
+        #
+        # if dayofwk < 5:
+        #     print("Run")
         statquery = '''
             select O.id, O.acst, O.audit_event, TO_CHAR(O.audit_timestamp),
                 N.id, N.acst, N.audit_event, N.audit_timestamp,
