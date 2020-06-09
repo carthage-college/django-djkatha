@@ -72,17 +72,8 @@ def main():
         # determines which database is being called from the command line
         if database == 'cars':
             EARL = settings.INFORMIX_ODBC
-        if database == 'train':
+        elif database == 'train':
             EARL = settings.INFORMIX_ODBC_TRAIN
-        # if database == 'sandbox':
-        #     EARL = settings.INFORMIX_ODBC_SANDBOX
-
-        # else:
-            # # this will raise an error when we call get_engine()
-            # below but the argument parser should have taken
-            # care of this scenario and we will never arrive here.
-            # EARL = None
-        # establish database connection
         # print(EARL)
 
         """"--------GET THE TOKEN------------------"""
@@ -96,7 +87,6 @@ def main():
             -----------------------------------------------------------
         """
         # os.system("python sky_constituent_list.py --database=cars")
-
 
         # Probably should change the other file to a class or whatever if I
         # do this permanently
@@ -232,14 +222,14 @@ def main():
                     # Get the row id of the custom field record
                     field_id = get_const_custom_fields(current_token, bb_id,
                                                   'Student Status')
-                    print("set custom fields: " + str(carth_id) + ", "
-                               + acad_stat)
+                    # print("set custom fields: " + str(carth_id) + ", "
+                    #            + acad_stat)
 
                     """ret is the id of the custom record, not the student"""
                     if field_id == 0:
-                        print("Error in student_status.py - for: "
-                                       + str(carth_id) + ", Unable to get the "
-                                                         "custom field")
+                        # print("Error in student_status.py - for: "
+                        #                + str(carth_id) + ", Unable to get the "
+                        #                                  "custom field")
                         fn_write_error("Error in student_status.py - for: "
                                    + str(carth_id) + ", Unable to get the "
                                    "custom field")
@@ -249,15 +239,20 @@ def main():
                             + ", Unable to get the custom field")
                         pass
                     else:
-                        # print('Update record ' + str(field_id) + ' '
-                        #       + acad_stat)
                         ret1 = update_const_custom_fields(current_token,
                                                       str(field_id),
                                                       'CX Status Update',
                                                       acad_stat)
-                        # print(ret1)
+
+                        if ret1 == 0:
+                            print("set custom fields: " + str(carth_id) + ", "
+                                               + acad_stat)
+                        else:
+                            print("Patch failed")
+
                 else:
                     print("Nobody home")
+                    pass
 
     except Exception as e:
         print("Error in main:  " + str(e))
