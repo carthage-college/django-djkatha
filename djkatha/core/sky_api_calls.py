@@ -176,7 +176,7 @@ def get_const_custom_fields(current_token, id, category):
                     # print("Date Modified = " + i['date_modified'])
                     # print("Parent id = " + i['parent_id'])
                     # print("Type = " + i['type'])
-                    print("Blackbaud Status Value = " + i['value'])
+                    # print("Blackbaud Status Value = " + i['value'])
                     return item_id
 
     except Exception as e:
@@ -267,7 +267,7 @@ def get_constituents_custom_field_list(current_token, searchtime):
     # print(t)
     z = x[:10] + 'T12:00:00.000-04:00'
     # z = t[:20] + '.0000000-04:00'
-    print(z)
+    # print(z)
 
     # 2020-01-05T12:00:00.0000000-04:00 THis works!
     """This calls the API Constituent Custom Field List (All Constituents)
@@ -282,7 +282,7 @@ def get_constituents_custom_field_list(current_token, searchtime):
     # urlst = "https://api.sky.blackbaud.com/constituent/v1/constituents/" \
     #         "customfields?category=Student Status&value=Blank"
     try:
-        print(urlst)
+        # print(urlst)
         x = api_get(current_token, urlst)
         return x
         # if x == 0:
@@ -506,7 +506,7 @@ def update_const_custom_fields(current_token, itemid, comment, val):
             print("Patch Failure")
             return 1
         else:
-            print("Patch Success")
+            # print("Patch Success")
             return 0
 
 
