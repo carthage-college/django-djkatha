@@ -12,6 +12,9 @@ import sys
 import argparse
 import datetime
 from datetime import date, timedelta
+import time
+from time import strftime
+
 
 
 # Note to self, keep this here
@@ -68,6 +71,11 @@ def main():
 
         # set global variable
         global EARL
+
+        datetimestr = time.strftime("%Y%m%d%H%M%S")
+        # Defines file names and directory location
+        RE_STU_LOG = settings.BB_LOG_FOLDER + 'RE_student_status' + datetimestr + ".txt"
+        print(RE_STU_LOG)
 
         # determines which database is being called from the command line
         if database == 'cars':
@@ -194,7 +202,7 @@ def main():
             data_result = xsql(statquery, connection).fetchall()
             ret = list(data_result)
             for i in ret:
-                print(str(i[8]) + " " + i[5] + " " + str(i[9]))
+                # print(str(i[8]) + " " + i[5] + " " + str(i[9]))
                 carth_id = i[8]
                 acad_stat = i[5]
                 bb_id = i[9]
@@ -244,9 +252,15 @@ def main():
                                                       'CX Status Update',
                                                       acad_stat)
 
+
+
                         if ret1 == 0:
-                            print("set custom fields: " + str(carth_id) + ", "
-                                               + acad_stat)
+                            # print("set custom fields: " + str(carth_id) + ", "
+                            #                    + acad_stat)
+                            f = open(RE_STU_LOG, "a")
+                            f.write("set custom fields: " + str(carth_id) + ", "
+                                               + acad_stat + '\n')
+                            f.close()
                         else:
                             print("Patch failed")
 
