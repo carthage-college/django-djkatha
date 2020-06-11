@@ -15,8 +15,6 @@ from datetime import date, timedelta
 import time
 from time import strftime
 
-
-
 # Note to self, keep this here
 # django settings for shell environment
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "djkatha.settings.shell")
@@ -43,7 +41,8 @@ from djkatha.core.sky_api_auth import fn_do_token
 from djkatha.core.sky_api_calls import api_get, get_const_custom_fields, \
     get_constituent_id, set_const_custom_field, update_const_custom_fields, \
     delete_const_custom_fields, get_relationships, api_post, api_patch, \
-    api_delete, get_custom_fields, get_custom_field_value, get_constituent_list
+    api_delete, get_custom_fields, get_custom_field_value, \
+    get_constituent_list
 
 from djimix.core.utils import get_connection, xsql
 
@@ -74,8 +73,9 @@ def main():
 
         datetimestr = time.strftime("%Y%m%d%H%M%S")
         # Defines file names and directory location
-        RE_STU_LOG = settings.BB_LOG_FOLDER + 'RE_student_status' + datetimestr + ".txt"
-        print(RE_STU_LOG)
+        RE_STU_LOG = settings.BB_LOG_FOLDER + 'RE_student_status' \
+                     + datetimestr + ".txt"
+        # print(RE_STU_LOG)
 
         # determines which database is being called from the command line
         if database == 'cars':
@@ -120,7 +120,6 @@ def main():
         # cache.set('lastrun', dat)
         # x = cache.get('lastrun')
         # print(x)
-
 
         """THis query looks for recent changes in the student status.  
             We do not want to use any records that do NOT have an re_api_id 
@@ -174,10 +173,8 @@ def main():
                 CR.cx_id, CR.re_api_id;
             '''
 
-
         """For periodic multi student runs, only want status for the 
         current term"""
-
 
         # statquery = '''select SAR.id, SAR.ACST, '', '', CVR.cx_id,
         #                         SAR.acst, '','', CVR.cx_id, CVR.re_api_id, ''
@@ -188,14 +185,13 @@ def main():
         #                         where CVR.re_api_id is not null
         #                         AND SAR.acst not in ('PAST')
         #                         and SAR.yr in (Select yr from cursessyr_vw)
-        #                         and SAR.sess in (select sess from cursessyr_vw)
+        #                         and SAR.sess in (select sess from
+        #                         cursessyr_vw)
         #                         AND SAR.cl     = 'SR'
         #                         --and SAR.id = 1490558
         #            '''
         # print(statquery)
 
-
-        # print(statquery)
         # 2384
         connection = get_connection(EARL)
         with connection:
@@ -236,15 +232,16 @@ def main():
                     """ret is the id of the custom record, not the student"""
                     if field_id == 0:
                         # print("Error in student_status.py - for: "
-                        #                + str(carth_id) + ", Unable to get the "
-                        #                                  "custom field")
+                        #                + str(carth_id) + ", Unable to get
+                        #                the custom field")
                         fn_write_error("Error in student_status.py - for: "
                                    + str(carth_id) + ", Unable to get the "
                                    "custom field")
                         fn_send_mail(settings.BB_SKY_TO_EMAIL,
-                            settings.BB_SKY_FROM_EMAIL, "SKY API ERROR", "Error in "
-                            "student_status.py - for: " +  str(carth_id)
-                            + ", Unable to get the custom field")
+                            settings.BB_SKY_FROM_EMAIL, "SKY API ERROR",
+                                "Error in student_status.py - for: "
+                                     + str(carth_id)
+                                     + ", Unable to get the custom field")
                         pass
                     else:
                         ret1 = update_const_custom_fields(current_token,
@@ -252,14 +249,12 @@ def main():
                                                       'CX Status Update',
                                                       acad_stat)
 
-
-
                         if ret1 == 0:
-                            # print("set custom fields: " + str(carth_id) + ", "
-                            #                    + acad_stat)
+                            # print("set custom fields: " + str(carth_id)
+                            # + ", " + acad_stat)
                             f = open(RE_STU_LOG, "a")
-                            f.write("set custom fields: " + str(carth_id) + ", "
-                                               + acad_stat + '\n')
+                            f.write("set custom fields: " + str(carth_id)
+                                    + ", " + acad_stat + '\n')
                             f.close()
                         else:
                             print("Patch failed")
