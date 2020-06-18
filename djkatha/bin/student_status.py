@@ -197,71 +197,82 @@ def main():
         with connection:
             data_result = xsql(statquery, connection).fetchall()
             ret = list(data_result)
-            for i in ret:
-                # print(str(i[8]) + " " + i[5] + " " + str(i[9]))
-                carth_id = i[8]
-                acad_stat = i[5]
-                bb_id = i[9]
-                # print(bb_id)
-                """
-                -----------------------------------------------------------
-                --2-FIND RAISERS EDGE ID IN LOCAL TABLE --------------------
-                MAY NOT BE NECESSARY IF I ASSUME ALL THE INDIVIDUALS
-                THAT MATTER ARE IN CVID_REC ALREADY AND DON"T LOOK FOR
-                CHANGES FOR ANY OTHER STUDENTS
-                -----------------------------------------------------------
+            if ret:
+                for i in ret:
+                    # print(str(i[8]) + " " + i[5] + " " + str(i[9]))
+                    carth_id = i[8]
+                    acad_stat = i[5]
+                    bb_id = i[9]
+                    # print(bb_id)
+                    """
+                    -----------------------------------------------------------
+                    --2-FIND RAISERS EDGE ID IN LOCAL TABLE --------------------
+                    MAY NOT BE NECESSARY IF I ASSUME ALL THE INDIVIDUALS
+                    THAT MATTER ARE IN CVID_REC ALREADY AND DON"T LOOK FOR
+                    CHANGES FOR ANY OTHER STUDENTS
+                    -----------------------------------------------------------
+    
+                    Look for student and status in local table
+                    Else look for student and status at BB via API
+                    Add to BB if necessary (THIS WILL BE DONE BY OMATIC)
+                    Add or update status in BB
+                    Update local table if necessary
+                    """
+                    #         '''------------------------------------------------
+                    #           --3-UPDATE THE CUSTOM STUDENT STATUS FIELD-------
+                    #         ---------------------------------------------------
+                    #         '''
+                    if bb_id != 0:
+                        # print("Update custom field")
+                        # Get the row id of the custom field record
+                        field_id = get_const_custom_fields(current_token, bb_id,
+                                                      'Student Status')
+                        # print("set custom fields: " + str(carth_id) + ", "
+                        #            + acad_stat)
 
-                Look for student and status in local table
-                Else look for student and status at BB via API
-                Add to BB if necessary (THIS WILL BE DONE BY OMATIC)
-                Add or update status in BB
-                Update local table if necessary
-                """
-                #         '''------------------------------------------------
-                #           --3-UPDATE THE CUSTOM STUDENT STATUS FIELD-------
-                #         ---------------------------------------------------
-                #         '''
-                if bb_id != 0:
-                    # print("Update custom field")
-                    # Get the row id of the custom field record
-                    field_id = get_const_custom_fields(current_token, bb_id,
-                                                  'Student Status')
-                    # print("set custom fields: " + str(carth_id) + ", "
-                    #            + acad_stat)
-
-                    """ret is the id of the custom record, not the student"""
-                    if field_id == 0:
-                        # print("Error in student_status.py - for: "
-                        #                + str(carth_id) + ", Unable to get
-                        #                the custom field")
-                        fn_write_error("Error in student_status.py - for: "
-                                   + str(carth_id) + ", Unable to get the "
-                                   "custom field")
-                        fn_send_mail(settings.BB_SKY_TO_EMAIL,
-                            settings.BB_SKY_FROM_EMAIL, "SKY API ERROR",
-                                "Error in student_status.py - for: "
-                                     + str(carth_id)
-                                     + ", Unable to get the custom field")
-                        pass
-                    else:
-                        ret1 = update_const_custom_fields(current_token,
-                                                      str(field_id),
-                                                      'CX Status Update',
-                                                      acad_stat)
-
-                        if ret1 == 0:
-                            # print("set custom fields: " + str(carth_id)
-                            # + ", " + acad_stat)
-                            f = open(RE_STU_LOG, "a")
-                            f.write("set custom fields: " + str(carth_id)
-                                    + ", " + acad_stat + '\n')
-                            f.close()
+                        """ret is the id of the custom record, not the student"""
+                        if field_id == 0:
+                            # print("Error in student_status.py - for: "
+                            #                + str(carth_id) + ", Unable to get
+                            #                the custom field")
+                            fn_write_error("Error in student_status.py - for: "
+                                       + str(carth_id) + ", Unable to get the "
+                                       "custom field")
+                            fn_send_mail(settings.BB_SKY_TO_EMAIL,
+                                settings.BB_SKY_FROM_EMAIL, "SKY API ERROR",
+                                    "Error in student_status.py - for: "
+                                         + str(carth_id)
+                                         + ", Unable to get the custom field")
+                            pass
                         else:
-                            print("Patch failed")
+                            ret1 = update_const_custom_fields(current_token,
+                                                          str(field_id),
+                                                          'CX Status Update',
+                                                          acad_stat)
 
-                else:
-                    print("Nobody home")
-                    pass
+                            if ret1 == 0:
+                                # print("set custom fields: " + str(carth_id)
+                                # + ", " + acad_stat)
+                                f = open(RE_STU_LOG, "a")
+                                f.write("set custom fields: " + str(carth_id)
+                                        + ", " + acad_stat + '\n')
+                                f.close()
+                            else:
+                                print("Patch failed")
+
+                    else:
+                        print("Nobody home")
+                        pass
+                print("Process complete")
+                fn_send_mail(settings.BB_SKY_TO_EMAIL,
+                             settings.BB_SKY_FROM_EMAIL, "SKY API",
+                             "New records processed for Blackbaud: ")
+
+            else:
+                 print("No changes found")
+                 fn_send_mail(settings.BB_SKY_TO_EMAIL,
+                             settings.BB_SKY_FROM_EMAIL, "SKY API",
+                             "No new records for Blackbaud: ")
 
     except Exception as e:
         print("Error in main:  " + str(e))
