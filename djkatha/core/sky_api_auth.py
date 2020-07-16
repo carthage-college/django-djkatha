@@ -15,10 +15,12 @@ from datetime import datetime
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "djequis.settings")
 django.setup()
 
+from djkatha.core.utilities import fn_write_error, fn_send_mail
 from django.conf import settings
 from django.core.cache import cache
 
-AUTHORIZATION = 'Basic ' + settings.BB_SKY_CLIENT_ID + ":" + settings.BB_SKY_CLIENT_SECRET
+AUTHORIZATION = 'Basic ' + settings.BB_SKY_CLIENT_ID + ":" \
+                + settings.BB_SKY_CLIENT_SECRET
 urlSafeEncodedBytes = base64.urlsafe_b64encode(AUTHORIZATION.encode("utf-8"))
 urlSafeEncodedStr = str(urlSafeEncodedBytes)
 
@@ -64,17 +66,25 @@ def fn_token_refresh():
 
         elif status == 403:  # OUT OF API QUOTA - Quit
             # Print HTML repsonse and exit function with empty DataFrame
-            print('ERROR:  ' + str(status) + ":" + response)
-            print('You\'re out of API Quota!')
+            # print('ERROR:  ' + str(status) + ":" + response)
+            # print('You\'re out of API Quota!')
+            fn_write_error('ERROR:  ' + str(status) + ":"
+                           + ' You\'re out of API Quota!')
+            fn_send_mail(settings.BB_SKY_TO_EMAIL,
+                         settings.BB_SKY_FROM_EMAIL, "SKY API ERROR",
+                         'ERROR:  ' + str(status) + ":"
+                         + ' You\'re out of API Quota!')
             exit()
             return 0
         else:
-            print('ERROR:  ' + str(status) + ":" + response)
+            fn_write_error('ERROR:  ' + str(status))
             return 0
     except Exception as e:
-        print("Error in token_refresh:  " + e.message)
-        # fn_write_error("Error in fn_do_token.py - Main: "
-        #                + e.message)
+        # print("Error in token_refresh:  " + e.message)
+        fn_write_error("Error in token_refresh.py - Main: " + repr(e))
+        fn_send_mail(settings.BB_SKY_TO_EMAIL,
+                     settings.BB_SKY_FROM_EMAIL, "SKY API ERROR",
+                     "Error in sky_pi_auth.py - fn_token_refresh: " + repr(e))
         return 0
 
 def fn_do_token():
@@ -93,20 +103,20 @@ def fn_do_token():
             the token expires in 60 minutes, but the refresh token
             is good for 60 days"""
         t = cache.get('refreshtime')
-        print(t)
+        # print(t)
 
         if t is None:
             r = fn_token_refresh()
-            print(r)
+            # print(r)
         elif t < datetime.now() - dt.timedelta(minutes=59):
-            print('Out of limit')
-            print(t)
-            print(datetime.now() - dt.timedelta(minutes=59))
+            # print('Out of limit')
+            # print(t)
+            # print(datetime.now() - dt.timedelta(minutes=59))
             r = fn_token_refresh()
-            print(r)
+            # print(r)
         else:
-            print("within limit")
-
+            # print("within limit")
+            pass
         """"--------GET THE TOKEN------------------"""
         current_token = cache.get('tokenkey')
         # print("Current Token = ")
@@ -114,9 +124,12 @@ def fn_do_token():
         return current_token
 
     except Exception as e:
-        print("Error in fn_do_token:  " + e.message)
-        # fn_write_error("Error in fn_do_token.py - Main: "
-        #                + e.message)
+        # print("Error in fn_do_token:  " + repr(e))
+        fn_write_error("Error in fn_do_token.py - Main: "
+                       + repr(e))
+        fn_send_mail(settings.BB_SKY_TO_EMAIL,
+                     settings.BB_SKY_FROM_EMAIL, "SKY API ERROR",
+                     "Error in sky_pi_auth.py - fn_do_token: " + repr(e))
         return 0
 
 # def main():

@@ -10,7 +10,10 @@ Python functions to
 import os
 import sys
 import argparse
-
+import datetime
+from datetime import date, timedelta
+import time
+from time import strftime
 
 # Note to self, keep this here
 # django settings for shell environment
@@ -30,13 +33,16 @@ os.environ['ODBCINI'] = settings.ODBCINI
 os.environ['ONCONFIG'] = settings.ONCONFIG
 os.environ['INFORMIXSQLHOSTS'] = settings.INFORMIXSQLHOSTS
 # ________________
+import sky_constituent_list
 from django.conf import settings
 from django.core.cache import cache
+from djkatha.core.utilities import fn_write_error, fn_send_mail
 from djkatha.core.sky_api_auth import fn_do_token
 from djkatha.core.sky_api_calls import api_get, get_const_custom_fields, \
     get_constituent_id, set_const_custom_field, update_const_custom_fields, \
     delete_const_custom_fields, get_relationships, api_post, api_patch, \
-    api_delete, get_custom_fields, get_custom_field_value, get_constituent_list
+    api_delete, get_custom_fields, get_custom_field_value, \
+    get_constituent_list
 
 from djimix.core.utils import get_connection, xsql
 
@@ -59,182 +65,222 @@ parser.add_argument(
     dest="database"
 )
 
-"""
-    The process would have to involve 
-    1. Find the status of students in CX, (Look for a change date in 
-        audit table)
-    2. Then determine if the students with recent changes are in Raiser's Edge
-        ***WIll it be possible to have a student in RE w/o a status code?***
-        ***Only if student was added as a constituent and not a student***
-        ***If so, my table of existing students may be less than perfect***
-         
-        2a  Look for student in my table with cx and BB id numbers
-        2b  If not found, make API call to look for student NOT using status 
-            as a filter
-        2c If not in BB data pass on the record...will use O-matic to 
-           add new students three times a year
-    3. If student was in table, update the custom field
-        else If student was just added to BB, add the custom field
-            Finally, add student to the local table if new
-    --
-    No way to test any of this because there are no students in RE yet...
-"""
-
 def main():
     try:
 
         # set global variable
         global EARL
 
+        datetimestr = time.strftime("%Y%m%d%H%M%S")
+        # Defines file names and directory location
+        RE_STU_LOG = settings.BB_LOG_FOLDER + 'RE_student_status' \
+                     + datetimestr + ".txt"
+        # print(RE_STU_LOG)
+
         # determines which database is being called from the command line
         if database == 'cars':
             EARL = settings.INFORMIX_ODBC
-        if database == 'train':
+        elif database == 'train':
             EARL = settings.INFORMIX_ODBC_TRAIN
-        if database == 'sandbox':
-            EARL = settings.INFORMIX_ODBC_SANDBOX
-
-        # else:
-            # # this will raise an error when we call get_engine()
-            # below but the argument parser should have taken
-            # care of this scenario and we will never arrive here.
-            # EARL = None
-        # establish database connection
+        # print(EARL)
 
         """"--------GET THE TOKEN------------------"""
         current_token = fn_do_token()
-        # print("Current Token = ")
         # print(current_token)
+
+        """
+            -----------------------------------------------------------
+            Debating whether to call the sky_constituent_list routine here
+            to make sure the cvid_rec entries are current
+            -----------------------------------------------------------
+        """
+        # os.system("python sky_constituent_list.py --database=cars")
+
+        # Probably should change the other file to a class or whatever if I
+        # do this permanently
+        # sky_constituent_list.main()
 
         """
            -----------------------------------------------------------
            -1-GET STUDENTS WITH A STATUS CHANGE FROM PROG_ENR_REC-----
+            Assume all current blackbaud students have a re_api_id in the 
+            cvid_rec table.  This will be handled through a separate prior
+            process.
+            Look for status changes only for students who have the 
+            re_api_id entry
            -----------------------------------------------------------
         """
-        print(EARL)
-        # for real..
-        # Two options.  Get all changed records, look for local BB ID but ALSO
-        # look for BB ID via API.  If there is a record in BB, then add the
-        # BB ID locally if it doesn't exist.
-        # OR
-        # Ignore all changes locally that do not match an existing local BB ID
-        # The latter would be the lowest hits on the API
-        # statquery = '''select O.id, O.acst, O.audit_event, O.audit_timestamp,
-        #              N.id, N.acst, N.audit_event, N.audit_timestamp,
-        #              CR.cx_id, CR.re_api_id
-        #              from cars_audit:prog_enr_rec N
-        #              left join cars_audit:prog_enr_rec O
-        #              on O.id = N.id
-        #              and O.acst != N.acst
-        #              and O.audit_event = 'BU'
-        #              JOIN cvid_rec CR
-        #              ON CR.cx_id = O.id
-        #              where N.audit_event != 'BU'
-        #              and N.audit_timestamp > TODAY - 1
-        #              and N.audit_timestamp = O.audit_timestamp
-        #              and CR.re_api_id is not null
-        #     '''
 
-        # for testing...
+        # datetime.today().strftime('%Y-%m-%d')
 
-        statquery = '''select PER.id, PER.acst, 'BU', '', PER.id, PER.acst, 
-            'AU', '', PER.id, CR.re_api_id
-            from prog_enr_rec PER
-            JOIN acad_stat_table AST
-            on AST.acst = PER.acst
-            JOIN cvid_rec CR on 
-            CR.cx_id = PER.id
-            where PER.id in (1387218)'''
+        # dat = date.today()
+        # print(dat)
+        #
+        # dat = date.today() - timedelta(1)
+        # cache.set('lastrun', dat)
+        # x = cache.get('lastrun')
+        # print(x)
+
+        """THis query looks for recent changes in the student status.  
+            We do not want to use any records that do NOT have an re_api_id 
+           value.  It only applies to RE entered students at present"""
+
+        # # Monday = 0, Sunday = 6
+        # dayofwk = datetime.today().weekday()
+        # print(dayofwk)
+        # dayofwk = 5
+        # print(dayofwk)
+        #
+        # if dayofwk < 5:
+        #     print("Run")
+        statquery = '''
+            select O.id, O.acst, O.audit_event, TO_CHAR(O.audit_timestamp),
+                N.id, N.acst, N.audit_event, N.audit_timestamp,
+                CR.cx_id, CR.re_api_id, max(N.audit_timestamp)
+                from cars_audit:prog_enr_rec N
+                left join cars_audit:prog_enr_rec O
+                on O.id = N.id
+                and O.acst != N.acst
+                and O.audit_event in ('BU', 'I')
+            left JOIN cvid_rec CR
+                ON CR.cx_id = O.id
+            where
+                (N.audit_event != 'BU'
+                and N.audit_timestamp = O.audit_timestamp)
+                and N.audit_timestamp > TODAY - 3
+                and CR.re_api_id is not null
+                --and N.id = 1468587
+            group by O.id, O.acst, O.audit_event, O.audit_timestamp,
+                N.id, N.acst, N.audit_event, N.audit_timestamp,
+                CR.cx_id, CR.re_api_id
+
+            UNION
+
+            select 0 id, '' acst, '' audit_event, '' audit_timestamp,
+                N.id, N.acst, N.audit_event, N.audit_timestamp,
+                CR.cx_id, CR.re_api_id, max(N.audit_timestamp)
+                from cars_audit:prog_enr_rec N
+
+            left JOIN cvid_rec CR
+                ON CR.cx_id = N.id
+            where
+                (N.audit_event = 'I')
+                and N.audit_timestamp > TODAY - 3
+                and (CR.re_api_id is not null)
+                --and N.id = 1468649
+            group by id, acst, audit_event, audit_timestamp,
+                N.id, N.acst, N.audit_event, N.audit_timestamp,
+                CR.cx_id, CR.re_api_id;
+            '''
+
+        """For periodic multi student runs, only want status for the 
+        current term"""
+
+        # statquery = '''select SAR.id, SAR.ACST, '', '', CVR.cx_id,
+        #                         SAR.acst, '','', CVR.cx_id, CVR.re_api_id, ''
+        #                         ,SAR.yr, SAR.sess, SAR.cl
+        #                         from cvid_rec CVR
+        #                         JOIN STU_ACAD_REC SAR
+        #                         on CVR.cx_id = SAR.id
+        #                         where CVR.re_api_id is not null
+        #                         AND SAR.acst not in ('PAST')
+        #                         and SAR.yr in (Select yr from cursessyr_vw)
+        #                         and SAR.sess in (select sess from
+        #                         cursessyr_vw)
+        #                         AND SAR.cl     = 'SR'
+        #                         --and SAR.id = 1490558
+        #            '''
         # print(statquery)
 
+        # 2384
         connection = get_connection(EARL)
         with connection:
             data_result = xsql(statquery, connection).fetchall()
             ret = list(data_result)
-            for i in ret:
-                print(str(i[0]) + " " + i[5] + " " + str(i[9]))
-                carth_id = i[0]
-                acad_stat = i[5]
-                bb_id = i[9]
-                print(bb_id)
-                """
-                   -----------------------------------------------------------
-                  --2-FIND RAISERS EDGE ID IN LOCAL TABLE --------------------
+            if ret:
+                for i in ret:
+                    # print(str(i[8]) + " " + i[5] + " " + str(i[9]))
+                    carth_id = i[8]
+                    acad_stat = i[5]
+                    bb_id = i[9]
+                    # print(bb_id)
+                    """
+                    -----------------------------------------------------------
+                    --2-FIND RAISERS EDGE ID IN LOCAL TABLE --------------------
                     MAY NOT BE NECESSARY IF I ASSUME ALL THE INDIVIDUALS
                     THAT MATTER ARE IN CVID_REC ALREADY AND DON"T LOOK FOR
                     CHANGES FOR ANY OTHER STUDENTS
-                   -----------------------------------------------------------
+                    -----------------------------------------------------------
+    
+                    Look for student and status in local table
+                    Else look for student and status at BB via API
+                    Add to BB if necessary (THIS WILL BE DONE BY OMATIC)
+                    Add or update status in BB
+                    Update local table if necessary
+                    """
+                    #         '''------------------------------------------------
+                    #           --3-UPDATE THE CUSTOM STUDENT STATUS FIELD-------
+                    #         ---------------------------------------------------
+                    #         '''
+                    if bb_id != 0:
+                        # print("Update custom field")
+                        # Get the row id of the custom field record
+                        field_id = get_const_custom_fields(current_token, bb_id,
+                                                      'Student Status')
+                        # print("set custom fields: " + str(carth_id) + ", "
+                        #            + acad_stat)
 
-                  Look for student and status in local table
-                  Else look for student and status at BB via API
-                  Add to BB if necessary (THIS WILL BE DONE BY OMATIC)
-                  Add or update status in BB
-                  Update local table if necessary
-                """
-                """1. Look for id in local table"""
-                # # initialize bb_id
-                # bb_id = 0
-                # chk_sql = '''select re_api_id from cvid_rec
-                #     where cx_id = {}'''.format(carth_id)
-                # print(chk_sql)
-                # connection = get_connection(EARL)
-                # with connection:
-                #     data_result = xsql(chk_sql, connection).fetchall()
-                #     if data_result is None:
-                #         print("Query cvid_rec:  No bb_id stored locally")
-                #         pass
-                #     else:
-                #         ret = list(data_result)
-                #         # if ret:
-                #         for j in ret:
-                #             if j[0] is not None:
-                #                 bb_id = j[0]
-                #                 print("BB ID = " + str(bb_id))
-                #             else:
-                #                 print("No bb_id stored locally")
-                #                 bb_id = get_constituent_id(current_token,
-                #                 carth_id)
-                #                 print(bb_id)
-                #
-                #         '''-------------------------------------------------------
-                #           --3-UPDATE THE CUSTOM STUDENT STATUS FIELD----------------
-                #         ----------------------------------------------------------
-                #         '''
-                if bb_id != 0:
-                    print("Update custom field")
-                    # Get the row id of the custom field record
-                    field_id = get_const_custom_fields(current_token, bb_id,
-                                                  'Student Status')
+                        """ret is the id of the custom record, not the student"""
+                        if field_id == 0:
+                            # print("Error in student_status.py - for: "
+                            #                + str(carth_id) + ", Unable to get
+                            #                the custom field")
+                            fn_write_error("Error in student_status.py - for: "
+                                       + str(carth_id) + ", Unable to get the "
+                                       "custom field")
+                            fn_send_mail(settings.BB_SKY_TO_EMAIL,
+                                settings.BB_SKY_FROM_EMAIL, "SKY API ERROR",
+                                    "Error in student_status.py - for: "
+                                         + str(carth_id)
+                                         + ", Unable to get the custom field")
+                            pass
+                        else:
+                            ret1 = update_const_custom_fields(current_token,
+                                                          str(field_id),
+                                                          'CX Status Update',
+                                                          acad_stat)
 
-                    print("set custom fields: " + str(carth_id) + ", "
-                          + acad_stat)
+                            if ret1 == 0:
+                                # print("set custom fields: " + str(carth_id)
+                                # + ", " + acad_stat)
+                                f = open(RE_STU_LOG, "a")
+                                f.write("set custom fields: " + str(carth_id)
+                                        + ", " + acad_stat + '\n')
+                                f.close()
+                            else:
+                                print("Patch failed")
 
-                    """ret is the id of the custom record, not the student"""
-                    if field_id == 0:
-                        print('Add new record?')
                     else:
-                        print('Update record ' + str(field_id) + ' ' 
-                              + acad_stat)
-                        ret1 = update_const_custom_fields(current_token,
-                                                      str(field_id),
-                                                      'Test',
-                                                      acad_stat)
-                        print(ret1)
-                else:
-                    print("Nobody home")
+                        print("Nobody home")
+                        pass
+                print("Process complete")
+                fn_send_mail(settings.BB_SKY_TO_EMAIL,
+                             settings.BB_SKY_FROM_EMAIL, "SKY API",
+                             "New records processed for Blackbaud: ")
 
-        """
-            **************************************
-            **************************************
-            **************************************
-            Here I need to get the local database stuff added
-        """
-
+            else:
+                 print("No changes found")
+                 fn_send_mail(settings.BB_SKY_TO_EMAIL,
+                             settings.BB_SKY_FROM_EMAIL, "SKY API",
+                             "No new records for Blackbaud: ")
 
     except Exception as e:
         print("Error in main:  " + str(e))
-        # fn_write_error("Error in misc_fees.py - Main: "
-        #                + e.message)
+        fn_write_error("Error in student_status.py - Main: "
+                       + repr(e))
+        fn_send_mail(settings.BB_SKY_TO_EMAIL,
+                     settings.BB_SKY_FROM_EMAIL, "SKY API ERROR", "Error in "
+                                "student_status.py - for: " + + repr(e))
 
 
 if __name__ == "__main__":
