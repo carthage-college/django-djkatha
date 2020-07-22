@@ -156,7 +156,7 @@ def main():
 
             UNION
 
-            select 0 id, '' acst, '' audit_event, '' audit_timestamp,
+            select id, '' acst, '' audit_event, '' audit_timestamp,
                 N.id, N.acst, N.audit_event, N.audit_timestamp,
                 CR.cx_id, CR.re_api_id, max(N.audit_timestamp)
                 from cars_audit:prog_enr_rec N
