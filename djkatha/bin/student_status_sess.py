@@ -126,7 +126,7 @@ def main():
                                 AND SAR.cl     = 'SR'
                                 --and SAR.id = 1586698
                    '''
-        print(statquery)
+        # print(statquery)
 
         connection = get_connection(EARL)
         with connection:
