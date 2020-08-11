@@ -159,24 +159,6 @@ def main():
                 CR.cx_id, CR.re_api_id;
             '''.format(last_sql_date)
 
-        """For periodic multi student runs, only want status for the 
-        current term"""
-
-        # statquery = '''select SAR.id, SAR.ACST, '', '', CVR.cx_id,
-        #                         SAR.acst, '','', CVR.cx_id, CVR.re_api_id, ''
-        #                         ,SAR.yr, SAR.sess, SAR.cl
-        #                         from cvid_rec CVR
-        #                         JOIN STU_ACAD_REC SAR
-        #                         on CVR.cx_id = SAR.id
-        #                         where CVR.re_api_id is not null
-        #                         AND SAR.acst not in ('PAST')
-        #                         and SAR.yr in (Select yr from cursessyr_vw)
-        #                         and SAR.sess in (select sess from
-        #                         cursessyr_vw)
-        #                         AND SAR.cl     = 'SR'
-        #                         --and SAR.id = 1490558
-        #            '''
-        # print(statquery)
 
         connection = get_connection(EARL)
         with connection:
