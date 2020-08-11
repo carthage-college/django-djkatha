@@ -23,7 +23,11 @@ import django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "djkatha.settings.shell")
 django.setup()
 # ________________
+
+# django settings for script
 from django.conf import settings
+from django.core.cache import cache
+
 from djkatha.core.sky_api_auth import fn_do_token
 from djkatha.core.sky_api_calls import get_constituents_custom_field_list, \
     get_lookup_id
@@ -140,8 +144,12 @@ def main():
            a csv list from advancement of the students added.  If so, we 
            can read that csv and find the BB_ID only for those students"""
 
-        searchtime = date.today() + timedelta(days=-30)
-        print("Searchtime = " + str(searchtime))
+        # searchtime = date.today() + timedelta(days=-60)
+        # print("Searchtime = " + str(searchtime))
+
+        """The date of the last search will be stored in Cache"""
+        searchtime = cache.get('last_const_date')
+        # print("last_const_date = " + str(searchtime))
 
         # API call to get BB ID
         x = get_constituents_custom_field_list(current_token, str(searchtime))
@@ -179,6 +187,17 @@ def main():
                         print("CVID Rec exists for" + str(x[0]))
                         # carth_id = x[0]
                         pass
+
+
+            """This will set a date for use in finding the constituent list"""
+            """To retrieve the date of last run"""
+            searchtime = date.today()
+            searchtime = searchtime.strftime('%Y-%m-%d')
+            """Set the constituent last date"""
+            cache.set('last_const_date', searchtime)
+
+            # t = cache.get('last_const_date')
+            # print("last_const_date = " + str(t))
 
 
     except Exception as e:

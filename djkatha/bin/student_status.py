@@ -11,7 +11,7 @@ import os
 import sys
 import argparse
 import datetime
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 import time
 from time import strftime
 
@@ -111,28 +111,14 @@ def main():
            -----------------------------------------------------------
         """
 
-        # datetime.today().strftime('%Y-%m-%d')
-
-        # dat = date.today()
-        # print(dat)
-        #
-        # dat = date.today() - timedelta(1)
-        # cache.set('lastrun', dat)
-        # x = cache.get('lastrun')
-        # print(x)
-
         """THis query looks for recent changes in the student status.  
             We do not want to use any records that do NOT have an re_api_id 
            value.  It only applies to RE entered students at present"""
 
-        # # Monday = 0, Sunday = 6
-        # dayofwk = datetime.today().weekday()
-        # print(dayofwk)
-        # dayofwk = 5
-        # print(dayofwk)
-        #
-        # if dayofwk < 5:
-        #     print("Run")
+        """To get the last query date from cache"""
+        last_sql_date = cache.get('Sql_date')
+        print(last_sql_date)
+
         statquery = '''
             select O.id, O.acst, O.audit_event, TO_CHAR(O.audit_timestamp),
                 N.id, N.acst, N.audit_event, N.audit_timestamp,
@@ -147,7 +133,7 @@ def main():
             where
                 (N.audit_event != 'BU'
                 and N.audit_timestamp = O.audit_timestamp)
-                and N.audit_timestamp > TODAY - 3
+                and N.audit_timestamp > "{0}"
                 and CR.re_api_id is not null
                 --and N.id = 1468587
             group by O.id, O.acst, O.audit_event, O.audit_timestamp,
@@ -165,13 +151,13 @@ def main():
                 ON CR.cx_id = N.id
             where
                 (N.audit_event = 'I')
-                and N.audit_timestamp > TODAY - 3
+                and N.audit_timestamp >  "{0}"
                 and (CR.re_api_id is not null)
                 --and N.id = 1468649
             group by id, acst, audit_event, audit_timestamp,
                 N.id, N.acst, N.audit_event, N.audit_timestamp,
                 CR.cx_id, CR.re_api_id;
-            '''
+            '''.format(last_sql_date)
 
         """For periodic multi student runs, only want status for the 
         current term"""
@@ -192,7 +178,6 @@ def main():
         #            '''
         # print(statquery)
 
-        # 2384
         connection = get_connection(EARL)
         with connection:
             data_result = xsql(statquery, connection).fetchall()
@@ -273,6 +258,14 @@ def main():
                  fn_send_mail(settings.BB_SKY_TO_EMAIL,
                              settings.BB_SKY_FROM_EMAIL, "SKY API",
                              "No new records for Blackbaud: ")
+
+        """To set a new date in cache"""
+        a = datetime.now()
+        last_sql_date = a.strftime('%Y-%m-%d %H:%M:%S')
+        print(last_sql_date)
+        cache.set('Sql_date', last_sql_date)
+        x = cache.get('Sql_date')
+        print(x)
 
     except Exception as e:
         print("Error in main:  " + str(e))
