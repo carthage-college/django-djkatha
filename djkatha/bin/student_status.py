@@ -82,11 +82,9 @@ def main():
             EARL = settings.INFORMIX_ODBC
         elif database == 'train':
             EARL = settings.INFORMIX_ODBC_TRAIN
-        # print(EARL)
 
         """"--------GET THE TOKEN------------------"""
         current_token = fn_do_token()
-        # print(current_token)
 
         """
             -----------------------------------------------------------
@@ -117,7 +115,7 @@ def main():
 
         """To get the last query date from cache"""
         last_sql_date = cache.get('Sql_date')
-        print(last_sql_date)
+        # print(last_sql_date)
 
         statquery = '''
             select O.id, O.acst, O.audit_event, TO_CHAR(O.audit_timestamp),
@@ -133,7 +131,7 @@ def main():
             where
                 (N.audit_event != 'BU'
                 and N.audit_timestamp = O.audit_timestamp)
-                and N.audit_timestamp > "{0}"
+                and N.audit_timestamp >= "{0}"
                 and CR.re_api_id is not null
                 --and N.id = 1468587
             group by O.id, O.acst, O.audit_event, O.audit_timestamp,
@@ -151,7 +149,7 @@ def main():
                 ON CR.cx_id = N.id
             where
                 (N.audit_event = 'I')
-                and N.audit_timestamp >  "{0}"
+                and N.audit_timestamp >=  "{0}"
                 and (CR.re_api_id is not null)
                 --and N.id = 1468649
             group by id, acst, audit_event, audit_timestamp,
@@ -170,7 +168,6 @@ def main():
                     carth_id = i[8]
                     acad_stat = i[5]
                     bb_id = i[9]
-                    # print(bb_id)
                     """
                     -----------------------------------------------------------
                     --2-FIND RAISERS EDGE ID IN LOCAL TABLE --------------------
@@ -190,7 +187,6 @@ def main():
                     #         ---------------------------------------------------
                     #         '''
                     if bb_id != 0:
-                        # print("Update custom field")
                         # Get the row id of the custom field record
                         field_id = get_const_custom_fields(current_token, bb_id,
                                                       'Student Status')
@@ -244,11 +240,8 @@ def main():
         """To set a new date in cache"""
         a = datetime.now()
         last_sql_date = a.strftime('%Y-%m-%d %H:%M:%S')
-        print(last_sql_date)
         cache.set('Sql_date', last_sql_date)
-        x = cache.get('Sql_date')
-        print(x)
-
+    
     except Exception as e:
         print("Error in main:  " + str(e))
         fn_write_error("Error in student_status.py - Main: "
