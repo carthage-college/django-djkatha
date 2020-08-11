@@ -28,6 +28,7 @@ django.setup()
 from django.conf import settings
 from django.core.cache import cache
 
+from djkatha.core.utilities import fn_write_error, fn_send_mail
 from djkatha.core.sky_api_auth import fn_do_token
 from djkatha.core.sky_api_calls import get_constituents_custom_field_list, \
     get_lookup_id
@@ -104,7 +105,6 @@ def fn_update_local(carth_id, bb_id):
         q_upd_args = (bb_id, carth_id)
         connection = get_connection(EARL)
         # print(q_upd_sql)
-        print(carth_id)
         with connection:
             cur = connection.cursor()
             cur.execute(q_upd_sql, q_upd_args)
@@ -131,10 +131,8 @@ def main():
 
         """"--------GET THE TOKEN------------------"""
         current_token = fn_do_token()
-        # print("Current Token = ")
         # print(current_token)
 
-        # print(EARL)
         """-----Get a list of constituents with a custom field of 
             Student Status - STORE the id in cvid_rec-------"""
         """---We need this to match Carthage ID to Blackbaud ID------"""
@@ -143,9 +141,6 @@ def main():
            UPDATE 1/17/20  It will more likely be the case that we will get
            a csv list from advancement of the students added.  If so, we 
            can read that csv and find the BB_ID only for those students"""
-
-        # searchtime = date.today() + timedelta(days=-60)
-        # print("Searchtime = " + str(searchtime))
 
         """The date of the last search will be stored in Cache"""
         searchtime = cache.get('last_const_date')
@@ -157,10 +152,8 @@ def main():
         if x == 0:
             print("No recent student entries in RE")
         else:
-            # print(x['value'])
             for i in x['value']:
                 bb_id = i["parent_id"]
-                print(bb_id)
                 # Look for ID in cvid_rec
                 chk_sql = '''select cx_id, re_api_id from cvid_rec
                     where re_api_id = {}'''.format(i['parent_id'])
@@ -177,11 +170,9 @@ def main():
                     # the blackbaud id
 
                     if x is None:
-                        # print("Need to find CarthID for bb_id "
-                        #       + str(bb_id))
                         carth_id = get_lookup_id(current_token, bb_id)
                         ret = fn_update_local(carth_id, bb_id)
-                        print(ret)
+                        # print(ret)
 
                     else:
                         print("CVID Rec exists for" + str(x[0]))
@@ -196,17 +187,15 @@ def main():
             """Set the constituent last date"""
             cache.set('last_const_date', searchtime)
 
-            # t = cache.get('last_const_date')
-            # print("last_const_date = " + str(t))
-
-
     except Exception as e:
-        print("Error in main:  " + str(e))
-        # print(type(e))
-        # print(e.args)
+        # print("Error in main:  " + repr(e))
         sqlstate = e.args[1]
-        print(sqlstate)
-
+        # print(sqlstate)
+        fn_write_error("Error in sky_constituent_list.py - Main: "
+                       + repr(e))
+        fn_send_mail(settings.BB_SKY_TO_EMAIL,
+                     settings.BB_SKY_FROM_EMAIL, "SKY API ERROR", "Error in "
+                                "sky_constituent_list.py - for: " + + repr(e))
 
 if __name__ == "__main__":
     args = parser.parse_args()
