@@ -229,19 +229,21 @@ def main():
                 print("Process complete")
                 fn_send_mail(settings.BB_SKY_TO_EMAIL,
                              settings.BB_SKY_FROM_EMAIL, "SKY API",
-                             "New records processed for Blackbaud: ")
+                             "New records processed for Blackbaud: "
+                             + str(last_sql_date))
 
             else:
                  print("No changes found")
                  fn_send_mail(settings.BB_SKY_TO_EMAIL,
                              settings.BB_SKY_FROM_EMAIL, "SKY API",
                              "No new records for Blackbaud: ")
+                 print(last_sql_date)
 
         """To set a new date in cache"""
         a = datetime.now()
         last_sql_date = a.strftime('%Y-%m-%d %H:%M:%S')
         cache.set('Sql_date', last_sql_date)
-    
+
     except Exception as e:
         print("Error in main:  " + str(e))
         fn_write_error("Error in student_status.py - Main: "
