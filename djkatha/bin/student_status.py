@@ -228,9 +228,10 @@ def main():
                         pass
                 print("Process complete")
                 fn_send_mail(settings.BB_SKY_TO_EMAIL,
-                             settings.BB_SKY_FROM_EMAIL, "SKY API",
+                             settings.BB_SKY_FROM_EMAIL,
+                             "SKY API:  Last run was: " + str(last_sql_date),
                              "New records processed for Blackbaud: "
-                             + str(last_sql_date))
+                             )
 
             else:
                  print("No changes found")
