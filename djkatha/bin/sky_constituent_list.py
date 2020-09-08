@@ -10,7 +10,7 @@ Python functions to
 # import requests
 import sys
 import os
-import argparse
+# import argparse
 import pyodbc
 import datetime
 from datetime import datetime, date, timedelta
@@ -47,19 +47,7 @@ DEBUG = settings.INFORMIX_DEBUG
 desc = """
     Collect data from Blackbaud
 """
-parser = argparse.ArgumentParser(description=desc)
 
-parser.add_argument(
-    "--test",
-    action='store_true',
-    help="Dry run?",
-    dest="test"
-)
-parser.add_argument(
-    "-d", "--database",
-    help="database name.",
-    dest="database"
-)
 """
     12/9/19 - The API call to get_constituent_list can be filtered by student
          status and add date.   
@@ -116,18 +104,10 @@ def fn_update_local(carth_id, bb_id):
             return 0
 
 
-def main():
+def check_for_constituents(EARL):
     try:
-        # set global variable
-        global EARL
 
-        # determines which database is being called from the command line
-        if database == 'cars':
-            EARL = settings.INFORMIX_ODBC
-        if database == 'train':
-            EARL = settings.INFORMIX_ODBC_TRAIN
-        # if database == 'sandbox':
-        #     EARL = settings.INFORMIX_ODBC_SANDBOX
+        # print("IN Check for Constituents")
 
         """"--------GET THE TOKEN------------------"""
         current_token = fn_do_token()
@@ -144,6 +124,7 @@ def main():
 
         """The date of the last search will be stored in Cache"""
         searchtime = cache.get('last_const_date')
+
         # print("last_const_date = " + str(searchtime))
 
         # API call to get BB ID
@@ -180,12 +161,6 @@ def main():
                         pass
 
 
-            """This will set a date for use in finding the constituent list"""
-            """To retrieve the date of last run"""
-            searchtime = date.today()
-            searchtime = searchtime.strftime('%Y-%m-%d')
-            """Set the constituent last date"""
-            cache.set('last_const_date', searchtime)
 
     except Exception as e:
         # print("Error in main:  " + repr(e))
@@ -196,27 +171,3 @@ def main():
         fn_send_mail(settings.BB_SKY_TO_EMAIL,
                      settings.BB_SKY_FROM_EMAIL, "SKY API ERROR", "Error in "
                                 "sky_constituent_list.py - for: " + + repr(e))
-
-if __name__ == "__main__":
-    args = parser.parse_args()
-    test = args.test
-    database = args.database
-
-    if not database:
-        print("mandatory option missing: database name\n")
-        parser.print_help()
-        exit(-1)
-    else:
-        database = database.lower()
-
-    if database != 'cars' and database != 'train' and database != 'sandbox':
-        print("database must be: 'cars' or 'train' or 'sandbox'\n")
-        parser.print_help()
-        exit(-1)
-
-    if not test:
-        test = 'prod'
-    else:
-        test = "test"
-
-    sys.exit(main())
