@@ -33,16 +33,14 @@ os.environ['ODBCINI'] = settings.ODBCINI
 os.environ['ONCONFIG'] = settings.ONCONFIG
 os.environ['INFORMIXSQLHOSTS'] = settings.INFORMIXSQLHOSTS
 # ________________
-import sky_constituent_list
+# import sky_constituent_list
+from sky_constituent_list import check_for_constituents
 from django.conf import settings
 from django.core.cache import cache
 from djkatha.core.utilities import fn_write_error, fn_send_mail
 from djkatha.core.sky_api_auth import fn_do_token
-from djkatha.core.sky_api_calls import api_get, get_const_custom_fields, \
-    get_constituent_id, set_const_custom_field, update_const_custom_fields, \
-    delete_const_custom_fields, get_relationships, api_post, api_patch, \
-    api_delete, get_custom_fields, get_custom_field_value, \
-    get_constituent_list
+from djkatha.core.sky_api_calls import get_const_custom_fields, \
+    update_const_custom_fields
 
 from djimix.core.utils import get_connection, xsql
 
@@ -71,17 +69,24 @@ def main():
         # set global variable
         global EARL
 
+        # determines which database is being called from the command line
+        if database == 'cars':
+            EARL = settings.INFORMIX_ODBC
+        elif database == 'train':
+            EARL = settings.INFORMIX_ODBC_TRAIN
+
+        """To get the last query date from cache"""
+        last_sql_date = cache.get('Sql_date')
+        # print(last_sql_date)
+
+        check_for_constituents(EARL)
+
         datetimestr = time.strftime("%Y%m%d%H%M%S")
         # Defines file names and directory location
         RE_STU_LOG = settings.BB_LOG_FOLDER + 'RE_student_status' \
                      + datetimestr + ".txt"
         # print(RE_STU_LOG)
 
-        # determines which database is being called from the command line
-        if database == 'cars':
-            EARL = settings.INFORMIX_ODBC
-        elif database == 'train':
-            EARL = settings.INFORMIX_ODBC_TRAIN
 
         """"--------GET THE TOKEN------------------"""
         current_token = fn_do_token()
@@ -98,6 +103,8 @@ def main():
         # do this permanently
         # sky_constituent_list.main()
 
+
+
         """
            -----------------------------------------------------------
            -1-GET STUDENTS WITH A STATUS CHANGE FROM PROG_ENR_REC-----
@@ -113,9 +120,7 @@ def main():
             We do not want to use any records that do NOT have an re_api_id 
            value.  It only applies to RE entered students at present"""
 
-        """To get the last query date from cache"""
-        last_sql_date = cache.get('Sql_date')
-        # print(last_sql_date)
+
 
         statquery = '''
             select O.id, O.acst, O.audit_event, TO_CHAR(O.audit_timestamp),
