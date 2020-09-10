@@ -241,7 +241,8 @@ def main():
             else:
                  print("No changes found")
                  fn_send_mail(settings.BB_SKY_TO_EMAIL,
-                             settings.BB_SKY_FROM_EMAIL, "SKY API",
+                             settings.BB_SKY_FROM_EMAIL,
+                              "SKY API:  Last run was: " + str(last_sql_date),
                              "No new records for Blackbaud: ")
                  print(last_sql_date)
 
