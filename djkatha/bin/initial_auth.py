@@ -9,8 +9,7 @@ import cryptography
 import django
 from cryptography import fernet
 from cryptography.fernet import Fernet
-# Note to self, keep this here
-# django settings for shell environment
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "djequis.settings")
 django.setup()
 # ________________
@@ -21,15 +20,11 @@ AUTHORIZATION = 'Basic ' + settings.BB_SKY_CLIENT_ID + ":" \
                 + settings.BB_SKY_CLIENT_SECRET
 urlSafeEncodedBytes = base64.urlsafe_b64encode(AUTHORIZATION.encode("utf-8"))
 urlSafeEncodedStr = str(urlSafeEncodedBytes)
-# print(urlSafeEncodedStr)
 
 # For Cryptography,
 # This only needs to happen once...store and re-use
 key = fernet.Fernet.generate_key()
 type(key)
-# file = open('key.key', 'wb') # wb = write bytes
-# file.write(key)
-# file.close()
 
 def get_initial_token():
     """
@@ -54,8 +49,6 @@ def get_initial_token():
     print("---  " + authorization_redirect_url + "  ---")
     authorization_code = input("Paste code here: ")
 
-    # print("Authorization Code = ")
-    # print(authorization_code)
 
     # STEP 2: Take initial token, retrieve access codes and floater token
     ref_token_getter = requests.post(
@@ -69,19 +62,13 @@ def get_initial_token():
     )
 
     tokens_dict = dict(json.loads(ref_token_getter.text))
-    # print(tokens_dict)
 
     frn = fernet.Fernet(key)
 
-    # print("-------------------------------")
     refresh_token = tokens_dict['refresh_token']
-    # refresh_token_encrpt = frn.encrypt(refresh_token.encode('ASCII'))
     access_token = tokens_dict['access_token']
-    # access_token_encrypt = frn.encrypt(access_token.encode('ASCII'))
 
     cache.set('tokenkey', access_token)
-
-    #     cache.set('refreshkey', refresh_token)
 
     x = cache.get('tokenkey')
     y = cache.get('refreshkey')
@@ -93,6 +80,6 @@ def get_initial_token():
 
 def main():
     ret = get_initial_token()
-    # print(ret)
+
 
 main()
