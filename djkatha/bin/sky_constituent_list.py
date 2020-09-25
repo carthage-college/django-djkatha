@@ -48,41 +48,6 @@ desc = """
     Collect data from Blackbaud
 """
 
-"""
-    12/9/19 - The API call to get_constituent_list can be filtered by student
-         status and add date.   
-          
-         So the process would involve getting a current list of those with 
-         a custom_field_category=Student Status where date added > whatever date
-          
-         Then I can write the CX id numbers and the Blackbaud ID numbers to a
-         file or table, read them back, and use the blackbaud ID to pass any 
-         changes to Blackbaud
-    
-         The process would have to involve finding the status of active students
-         in CX, (Look for a change date...to limit the number.  Maybe audit table)
-        
-         Then determine if the student is in Raiser's Edge by reading the list
-         just retrieved. 
-    
-         Currently the student adds would be periodic O-Matic processes, 
-         but I would possibly need to create the custom field record if 
-         O-Matic doesn't create it 
-           
-         May be easiest to just purge the table and repopulate it periodically
-         What about graduations then?
-            
-      If not add student  ??,
-          then add the custom field record  ???
-      Else - find out of custom field record exists
-          If not add
-          else update
-
-      So each student will require 1-2 API calls
-    
-      No way to test any of this because there are no students in RE yet...
-"""
-
 
 def fn_update_local(carth_id, bb_id):
     try:
@@ -107,7 +72,6 @@ def fn_update_local(carth_id, bb_id):
 def check_for_constituents(EARL):
     try:
 
-        # print("IN Check for Constituents")
 
         """"--------GET THE TOKEN------------------"""
         current_token = fn_do_token()
@@ -125,11 +89,9 @@ def check_for_constituents(EARL):
         """The date of the last search will be stored in Cache"""
         searchtime = cache.get('last_const_date')
 
-        # print("last_const_date = " + str(searchtime))
 
         # API call to get BB ID
         x = get_constituents_custom_field_list(current_token, str(searchtime))
-        # print(x['value'])
         if x == 0:
             print("No recent student entries in RE")
         else:
