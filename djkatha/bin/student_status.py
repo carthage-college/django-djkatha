@@ -15,7 +15,6 @@ from datetime import date, timedelta, datetime
 import time
 from time import strftime
 
-# Note to self, keep this here
 # django settings for shell environment
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "djkatha.settings.shell")
 import django
@@ -77,33 +76,17 @@ def main():
 
         """To get the last query date from cache"""
         last_sql_date = cache.get('Sql_date')
-        # print(last_sql_date)
 
+        # This calls sky_constituent list to grab any recently added IDs
         check_for_constituents(EARL)
 
         datetimestr = time.strftime("%Y%m%d%H%M%S")
         # Defines file names and directory location
         RE_STU_LOG = settings.BB_LOG_FOLDER + 'RE_student_status' \
                      + datetimestr + ".txt"
-        # print(RE_STU_LOG)
-
 
         """"--------GET THE TOKEN------------------"""
         current_token = fn_do_token()
-
-        """
-            -----------------------------------------------------------
-            Debating whether to call the sky_constituent_list routine here
-            to make sure the cvid_rec entries are current
-            -----------------------------------------------------------
-        """
-        # os.system("python sky_constituent_list.py --database=cars")
-
-        # Probably should change the other file to a class or whatever if I
-        # do this permanently
-        # sky_constituent_list.main()
-
-
 
         """
            -----------------------------------------------------------
@@ -119,8 +102,6 @@ def main():
         """THis query looks for recent changes in the student status.  
             We do not want to use any records that do NOT have an re_api_id 
            value.  It only applies to RE entered students at present"""
-
-
 
         statquery = '''
             select O.id, O.acst, O.audit_event, TO_CHAR(O.audit_timestamp),
@@ -176,21 +157,14 @@ def main():
                     """
                     -----------------------------------------------------------
                     --2-FIND RAISERS EDGE ID IN LOCAL TABLE --------------------
-                    MAY NOT BE NECESSARY IF I ASSUME ALL THE INDIVIDUALS
-                    THAT MATTER ARE IN CVID_REC ALREADY AND DON"T LOOK FOR
-                    CHANGES FOR ANY OTHER STUDENTS
                     -----------------------------------------------------------
-    
                     Look for student and status in local table
                     Else look for student and status at BB via API
                     Add to BB if necessary (THIS WILL BE DONE BY OMATIC)
                     Add or update status in BB
                     Update local table if necessary
                     """
-                    #         '''------------------------------------------------
-                    #           --3-UPDATE THE CUSTOM STUDENT STATUS FIELD-------
-                    #         ---------------------------------------------------
-                    #         '''
+
                     if bb_id != 0:
                         # Get the row id of the custom field record
                         field_id = get_const_custom_fields(current_token, bb_id,
