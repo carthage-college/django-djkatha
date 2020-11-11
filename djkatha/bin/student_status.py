@@ -76,6 +76,7 @@ def main():
 
         """To get the last query date from cache"""
         last_sql_date = cache.get('Sql_date')
+        # print(last_sql_date)
 
         # This calls sky_constituent list to grab any recently added IDs
         check_for_constituents(EARL)
@@ -143,7 +144,7 @@ def main():
                 CR.cx_id, CR.re_api_id;
             '''.format(last_sql_date)
 
-
+        # print(statquery)
         connection = get_connection(EARL)
         with connection:
             data_result = xsql(statquery, connection).fetchall()
@@ -201,9 +202,21 @@ def main():
                                 f.close()
                             else:
                                 print("Patch failed")
+                                fn_write_error(
+                                    "Error in student_status.py - Main:  "
+                                    "Patch API call failed "
+                                    + repr(e))
+                                fn_send_mail(settings.BB_SKY_TO_EMAIL,
+                                             settings.BB_SKY_FROM_EMAIL,
+                                             "SKY API ERROR", "Error in "
+                                             "student_status.py - for: "
+                                             "Patch API call failed "
+                                             + repr(
+                                        e))
+                                pass
 
                     else:
-                        print("Nobody home")
+                        # print("Nobody home")
                         pass
                 print("Process complete")
                 fn_send_mail(settings.BB_SKY_TO_EMAIL,
@@ -226,12 +239,12 @@ def main():
         cache.set('Sql_date', last_sql_date)
 
     except Exception as e:
-        print("Error in main:  " + str(e))
+        print("Error in main:  " + repr(e))
         fn_write_error("Error in student_status.py - Main: "
                        + repr(e))
         fn_send_mail(settings.BB_SKY_TO_EMAIL,
                      settings.BB_SKY_FROM_EMAIL, "SKY API ERROR", "Error in "
-                                "student_status.py - for: " + + repr(e))
+                                "student_status.py - for: " + repr(e))
 
 
 if __name__ == "__main__":
