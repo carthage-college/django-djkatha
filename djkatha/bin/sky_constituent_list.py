@@ -49,7 +49,7 @@ desc = """
 """
 
 
-def fn_update_local(carth_id, bb_id):
+def fn_update_local(carth_id, bb_id, EARL):
     try:
 
         q_upd_sql = '''UPDATE cvid_rec
@@ -57,15 +57,14 @@ def fn_update_local(carth_id, bb_id):
                 '''
         q_upd_args = (bb_id, carth_id)
         connection = get_connection(EARL)
-        # print(q_upd_sql)
         with connection:
             cur = connection.cursor()
             cur.execute(q_upd_sql, q_upd_args)
             return 1
     except pyodbc.Error as err:
-            # print("Error in fn_update_local:  " + str(err))
+            print("Error in fn_update_local:  " + str(err))
             sqlstate = err.args[0]
-            # print(sqlstate)
+            print(sqlstate)
             return 0
 
 
@@ -75,7 +74,6 @@ def check_for_constituents(EARL):
 
         """"--------GET THE TOKEN------------------"""
         current_token = fn_do_token()
-        # print(current_token)
 
         """-----Get a list of constituents with a custom field of 
             Student Status - STORE the id in cvid_rec-------"""
@@ -101,7 +99,6 @@ def check_for_constituents(EARL):
                 chk_sql = '''select cx_id, re_api_id from cvid_rec
                     where re_api_id = {}'''.format(i['parent_id'])
 
-                # print(chk_sql)
                 connection = get_connection(EARL)
 
                 with connection:
@@ -111,12 +108,9 @@ def check_for_constituents(EARL):
                     # Create the cvid_rec if it doesn't exist - Will require
                     # second call to API to retrieve the carthage id using
                     # the blackbaud id
-
                     if x is None:
                         carth_id = get_lookup_id(current_token, bb_id)
-                        ret = fn_update_local(carth_id, bb_id)
-                        # print(ret)
-
+                        ret = fn_update_local(carth_id, bb_id, EARL)
                     else:
                         print("CVID Rec exists for" + str(x[0]))
                         # carth_id = x[0]
