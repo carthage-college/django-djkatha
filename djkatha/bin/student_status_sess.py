@@ -15,6 +15,7 @@ from datetime import date, timedelta, datetime
 import time
 from time import strftime
 
+# Note to self, keep this here
 # django settings for shell environment
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "djkatha.settings.shell")
 import django
@@ -32,14 +33,16 @@ os.environ['ODBCINI'] = settings.ODBCINI
 os.environ['ONCONFIG'] = settings.ONCONFIG
 os.environ['INFORMIXSQLHOSTS'] = settings.INFORMIXSQLHOSTS
 # ________________
-# import sky_constituent_list
-from sky_constituent_list import check_for_constituents
+import sky_constituent_list
 from django.conf import settings
 from django.core.cache import cache
 from djkatha.core.utilities import fn_write_error, fn_send_mail
 from djkatha.core.sky_api_auth import fn_do_token
-from djkatha.core.sky_api_calls import get_const_custom_fields, \
-    update_const_custom_fields
+from djkatha.core.sky_api_calls import api_get, get_const_custom_fields, \
+    get_constituent_id, set_const_custom_field, update_const_custom_fields, \
+    delete_const_custom_fields, get_relationships, api_post, api_patch, \
+    api_delete, get_custom_fields, get_custom_field_value, \
+    get_constituent_list
 
 from djimix.core.utils import get_connection, xsql
 
@@ -62,32 +65,29 @@ parser.add_argument(
     dest="database"
 )
 
+
 def main():
     try:
 
         # set global variable
         global EARL
 
+        datetimestr = time.strftime("%Y%m%d%H%M%S")
+        # Defines file names and directory location
+        RE_STU_LOG = settings.BB_LOG_FOLDER + 'RE_student_status' \
+                     + datetimestr + ".txt"
+        # print(RE_STU_LOG)
+
         # determines which database is being called from the command line
         if database == 'cars':
             EARL = settings.INFORMIX_ODBC
         elif database == 'train':
             EARL = settings.INFORMIX_ODBC_TRAIN
-
-        """To get the last query date from cache"""
-        last_sql_date = cache.get('Sql_date')
-        # print(last_sql_date)
-
-        # This calls sky_constituent list to grab any recently added IDs
-        check_for_constituents(EARL)
-
-        datetimestr = time.strftime("%Y%m%d%H%M%S")
-        # Defines file names and directory location
-        RE_STU_LOG = settings.BB_LOG_FOLDER + 'RE_student_status' \
-                     + datetimestr + ".txt"
+        # print(EARL)
 
         """"--------GET THE TOKEN------------------"""
         current_token = fn_do_token()
+        # print(current_token)
 
         """
            -----------------------------------------------------------
@@ -104,47 +104,30 @@ def main():
             We do not want to use any records that do NOT have an re_api_id 
            value.  It only applies to RE entered students at present"""
 
-        statquery = '''
-            select O.id, O.acst, O.audit_event, TO_CHAR(O.audit_timestamp),
-                N.id, N.acst, N.audit_event, N.audit_timestamp,
-                CR.cx_id, CR.re_api_id, max(N.audit_timestamp)
-                from cars_audit:prog_enr_rec N
-                left join cars_audit:prog_enr_rec O
-                on O.id = N.id
-                and O.acst != N.acst
-                and O.audit_event in ('BU', 'I')
-            left JOIN cvid_rec CR
-                ON CR.cx_id = O.id
-            where
-                (N.audit_event != 'BU'
-                and N.audit_timestamp = O.audit_timestamp)
-                and N.audit_timestamp >= "{0}"
-                and CR.re_api_id is not null
-                --and N.id = 1468587
-            group by O.id, O.acst, O.audit_event, O.audit_timestamp,
-                N.id, N.acst, N.audit_event, N.audit_timestamp,
-                CR.cx_id, CR.re_api_id
+        """To get the last query date from cache"""
+        # last_sql_date = cache.get('Sql_date')
+        # print(last_sql_date)
 
-            UNION
 
-            select id, '' acst, '' audit_event, '' audit_timestamp,
-                N.id, N.acst, N.audit_event, N.audit_timestamp,
-                CR.cx_id, CR.re_api_id, max(N.audit_timestamp)
-                from cars_audit:prog_enr_rec N
+        """For periodic multi student runs, only want status for the 
+        current term"""
 
-            left JOIN cvid_rec CR
-                ON CR.cx_id = N.id
-            where
-                (N.audit_event = 'I')
-                and N.audit_timestamp >=  "{0}"
-                and (CR.re_api_id is not null)
-                --and N.id = 1468649
-            group by id, acst, audit_event, audit_timestamp,
-                N.id, N.acst, N.audit_event, N.audit_timestamp,
-                CR.cx_id, CR.re_api_id;
-            '''.format(last_sql_date)
-
+        statquery = '''select SAR.id, SAR.ACST, '', '', CVR.cx_id,
+                                SAR.acst, '','', CVR.cx_id, CVR.re_api_id, ''
+                                ,SAR.yr, SAR.sess, SAR.cl
+                                from cvid_rec CVR
+                                JOIN STU_ACAD_REC SAR
+                                on CVR.cx_id = SAR.id
+                                where CVR.re_api_id is not null
+                                AND SAR.acst not in ('PAST')
+                                and SAR.yr in (Select yr from cursessyr_vw)
+                                and SAR.sess in (select sess from
+                                cursessyr_vw)
+                                AND SAR.cl     = 'SR'
+                                --and SAR.id = 1586698
+                   '''
         # print(statquery)
+
         connection = get_connection(EARL)
         with connection:
             data_result = xsql(statquery, connection).fetchall()
@@ -155,43 +138,53 @@ def main():
                     carth_id = i[8]
                     acad_stat = i[5]
                     bb_id = i[9]
+                    # print(bb_id)
+
                     """
-                    -----------------------------------------------------------
-                    --2-FIND RAISERS EDGE ID IN LOCAL TABLE --------------------
-                    -----------------------------------------------------------
                     Look for student and status in local table
                     Else look for student and status at BB via API
                     Add to BB if necessary (THIS WILL BE DONE BY OMATIC)
                     Add or update status in BB
                     Update local table if necessary
                     """
-
+                    '''------------------------------------------------
+                      --2-UPDATE THE CUSTOM STUDENT STATUS
+                      FIELD-------
+                    ---------------------------------------------------
+                    '''
                     if bb_id != 0:
+                        # print("Update custom field")
                         # Get the row id of the custom field record
-                        field_id = get_const_custom_fields(current_token, bb_id,
-                                                      'Student Status')
+                        field_id = get_const_custom_fields(current_token,
+                                                           bb_id,
+                                                           'Student Status')
                         # print("set custom fields: " + str(carth_id) + ", "
                         #            + acad_stat)
 
-                        """ret is the id of the custom record, not the student"""
+                        """ret is the id of the custom record, not the
+                        student"""
                         if field_id == 0:
-                            # print("Error in student_status.py - for: "
-                            #                + str(carth_id) + ", Unable to get
-                            #                the custom field")
-                            fn_write_error("Error in student_status.py - for: "
-                                       + str(carth_id) + ", Unable to get the "
-                                       "custom field")
+                            # print("Error in student_status_term.py - for: "
+                            #       + str(carth_id) + ", Unable to get "
+                            #                         "the custom field")
+
+                            fn_write_error("Error in student_status_term.py - for: "
+                                           + str(
+                                carth_id) + ", Unable to get the "
+                                            "custom field")
                             fn_send_mail(settings.BB_SKY_TO_EMAIL,
-                                settings.BB_SKY_FROM_EMAIL, "SKY API ERROR",
-                                    "Error in student_status.py - for: "
+                                         settings.BB_SKY_FROM_EMAIL,
+                                         "SKY API ERROR",
+                                         "Error in student_status.py - for: "
                                          + str(carth_id)
                                          + ", Unable to get the custom field")
                             pass
                         else:
                             ret1 = update_const_custom_fields(current_token,
-                                                          str(field_id),
-                                                          'CX Status Update',
-                                                          acad_stat)
+                                                              str(field_id),
+                                                              'CX Status '
+                                                              'Update',
+                                                              acad_stat)
 
                             if ret1 == 0:
                                 # print("set custom fields: " + str(carth_id)
@@ -202,49 +195,31 @@ def main():
                                 f.close()
                             else:
                                 print("Patch failed")
-                                fn_write_error(
-                                    "Error in student_status.py - Main:  "
-                                    "Patch API call failed "
-                                    + repr(e))
-                                fn_send_mail(settings.BB_SKY_TO_EMAIL,
-                                             settings.BB_SKY_FROM_EMAIL,
-                                             "SKY API ERROR", "Error in "
-                                             "student_status.py - for: "
-                                             "Patch API call failed "
-                                             + repr(
-                                        e))
-                                pass
 
                     else:
-                        # print("Nobody home")
+                        print("Nobody home")
                         pass
-                print("Process complete")
-                fn_send_mail(settings.BB_SKY_TO_EMAIL,
-                             settings.BB_SKY_FROM_EMAIL,
-                             "SKY API:  Last run was: " + str(last_sql_date),
-                             "New records processed for Blackbaud: "
-                             )
+        #         print("Process complete")
+        #         fn_send_mail(settings.BB_SKY_TO_EMAIL,
+        #                      settings.BB_SKY_FROM_EMAIL, "SKY API",
+        #                      "New records processed for Blackbaud: ")
 
             else:
-                 print("No changes found")
-                 fn_send_mail(settings.BB_SKY_TO_EMAIL,
-                             settings.BB_SKY_FROM_EMAIL,
-                              "SKY API:  Last run was: " + str(last_sql_date),
+                print("No changes found")
+                fn_send_mail(settings.BB_SKY_TO_EMAIL,
+                             settings.BB_SKY_FROM_EMAIL, "SKY API",
                              "No new records for Blackbaud: ")
-                 print(last_sql_date)
 
-        """To set a new date in cache"""
-        a = datetime.now()
-        last_sql_date = a.strftime('%Y-%m-%d %H:%M:%S')
-        cache.set('Sql_date', last_sql_date)
+
 
     except Exception as e:
-        print("Error in main:  " + repr(e))
-        fn_write_error("Error in student_status.py - Main: "
+        print("Error in main:  " + str(e))
+        fn_write_error("Error in student_status_term.py - Main: "
                        + repr(e))
         fn_send_mail(settings.BB_SKY_TO_EMAIL,
                      settings.BB_SKY_FROM_EMAIL, "SKY API ERROR", "Error in "
-                                "student_status.py - for: " + repr(e))
+                                                                  "student_status.py - for: " + + repr(
+                e))
 
 
 if __name__ == "__main__":

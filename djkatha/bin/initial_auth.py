@@ -9,8 +9,7 @@ import cryptography
 import django
 from cryptography import fernet
 from cryptography.fernet import Fernet
-# Note to self, keep this here
-# django settings for shell environment
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "djequis.settings")
 django.setup()
 # ________________
@@ -21,15 +20,11 @@ AUTHORIZATION = 'Basic ' + settings.BB_SKY_CLIENT_ID + ":" \
                 + settings.BB_SKY_CLIENT_SECRET
 urlSafeEncodedBytes = base64.urlsafe_b64encode(AUTHORIZATION.encode("utf-8"))
 urlSafeEncodedStr = str(urlSafeEncodedBytes)
-# print(urlSafeEncodedStr)
 
 # For Cryptography,
 # This only needs to happen once...store and re-use
 key = fernet.Fernet.generate_key()
 type(key)
-file = open('key.key', 'wb') # wb = write bytes
-file.write(key)
-file.close()
 
 def get_initial_token():
     """
@@ -54,8 +49,6 @@ def get_initial_token():
     print("---  " + authorization_redirect_url + "  ---")
     authorization_code = input("Paste code here: ")
 
-    print("Authorization Code = ")
-    print(authorization_code)
 
     # STEP 2: Take initial token, retrieve access codes and floater token
     ref_token_getter = requests.post(
@@ -69,59 +62,24 @@ def get_initial_token():
     )
 
     tokens_dict = dict(json.loads(ref_token_getter.text))
-    print(tokens_dict)
-
-#
-    # Get the key from the file for encryption
-    file = open('key.key', 'rb')
-    key = file.read()
-    file.close()
-    print(key)
 
     frn = fernet.Fernet(key)
 
-    print("-------------------------------")
     refresh_token = tokens_dict['refresh_token']
-    print("refresh_token = ")
-    print(refresh_token)
-    refresh_token_encrpt = frn.encrypt(refresh_token.encode('ASCII'))
-    print(refresh_token_encrpt)
-    print("-------------------------------")
-
     access_token = tokens_dict['access_token']
-    print("access_token = ")
-    print(access_token)
-    access_token_encrypt = frn.encrypt(access_token.encode('ASCII'))
-    print(access_token_encrypt)
 
-    with open(settings.BB_SKY_TOKEN_FILE, 'w') as f:
-        f.write(access_token)
-        cache.set('tokenkey', access_token)
-    # with open(settings.BB_SKY_TOKEN_FILE, 'r') as f:
-    #         decrypted = f.readline()
-    # txt3 = frn.decrypt(decrypted)
-    # # print txt3
-
-    with open(settings.BB_SKY_REFRESH_TOKEN_FILE, 'w') as f:
-        f.write(refresh_token)
-        cache.set('refreshkey', refresh_token)
-
-    # with open(settings.BB_SKY_REFRESH_TOKEN_FILE, 'r') as f:
-    #         decrypted2 = f.readline()
-    # txt4 = frn.decrypt(decrypted2)
-    # # print txt4
+    cache.set('tokenkey', access_token)
 
     x = cache.get('tokenkey')
     y = cache.get('refreshkey')
-    print(x)
-    print(y)
+    # print(x)
+    # print(y)
 
     return 1
 
 
 def main():
-    print("hi")
     ret = get_initial_token()
-    print(ret)
+
 
 main()
