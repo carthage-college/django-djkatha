@@ -308,3 +308,22 @@ LOGGING = {
         },
     }
 }
+
+# Blackbaud Sky API
+# ---------------------------
+# To test against the test database, is first necessary to go through the
+# process of getting the initial authorization (see bin/initial_auth.py) and
+# then to make use of the other client ID and secret key
+# To flip back to the live environment, must do that again.
+
+BB_SKY_CLIENT_ID = ''
+BB_SKY_CLIENT_SECRET = ''
+BB_SKY_TOKEN_FILE = ''
+BB_SKY_REFRESH_TOKEN_FILE = ''
+BB_SKY_CALLBACK_URI = ''
+BB_SKY_AUTHORIZE_URL = 'https://oauth2.sky.blackbaud.com/authorization'
+BB_SKY_TOKEN_URL = 'https://oauth2.sky.blackbaud.com/token'
+BB_SKY_SUBSCRIPTION_KEY = ''
+BB_LOG_FOLDER = ''
+BB_SKY_TO_EMAIL = ''
+BB_SKY_FROM_EMAIL = ''
