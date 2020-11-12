@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+{% load livewhale_api %}
+{% load static %}
+{% load ifusergroup %}
+{% block extra_javascript %}
+{{ block.super }}
+<script type="text/javascript" charset="utf-8">
+$(function() {
+  /* override the submit event to handle some things */
+  $('form#health-check').submit(function(){
+    // disable submit button after users clicks it
+    $(this).children('button[type=submit]').attr('disabled', 'disabled');
+  });
+});
+</script>
+{% endblock %}
+{% block navbar-header %}
+<a href="{% url 'home' %}" class="mr-sm-3 mr-lg-3">
+<img src="{% static 'img/clogo.png' %}" height="30" class="mr-2">
+<a class="navbar-brand" href="{{root_url}}" style="font-size:.9em">#StaySafeCarthage Daily Check-in</a>
+{% endblock %}
+{% block navbar-top-links %}
+<ul class="navbar-nav ml-auto">
+  <li class="dropdown user-dropdown">
+    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+      <i class="fa fa-user"></i> {{user.username|default:"Greetings"}}
+      <b class="caret"></b>
+    </a>
+    <ul class="dropdown-menu">
+      <li class="divider"></li>
+      <li>
+        {% if user.is_anonymous %}
+        <a href="{% url 'auth_login' %}">
+          <i class="fa fa-sign-in"></i> Sign In
+        </a>
+        {% else %}
+        <a href="{% url 'auth_logout' %}">
+          <i class="fa fa-sign-out"></i> Sign Out
+        </a>
+        {% endif %}
+      </li>
+      {% ifusergroup 'carthageStaffStatus' %}
+      <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+      {% else %}{% ifusergroup 'carthageFacultyStatus' %}
+      <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+      {% endifusergroup %}{% endifusergroup %}
+      {% ifusergroup 'Research' %}
+      <li><a href="{% url 'dashboard_research' %}">Research</a></li>
+      {% endifusergroup %}
+      {% if user.is_superuser %}
+      <li class="divider"></li>
+      <li><a href="{% url 'admin:index' %}">Admin</a></li>
+      {% endif %}
+    </ul>
+  </li>
+</ul>
+{% endblock %}
+{% block breadcrumb %}
+  {% if messages %}
+    {% for message in messages %}
+    <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12 ml-2">
+      <div class=" alert {{message.tags}}">
+        <strong>{{ message }}</strong>
+      </div>
+    </div>
+    {% endfor %}
+  {% endif %}
+{% endblock %}
+{% block content %}
+<div class="forms-container col-lg-8 col-md-8 col-sm-12 col-xs-12 mb-4" style="padding-right:0px !important;">
+  <h3>Greetings from #StaySafeCarthage</h3>
+  <p>
+  Today is {% now "F jS, Y H:i" %}
+  <br>
+  How are you today? Click all that apply.
+  </p>
+  {% if form.errors %}
+  <div class="error">
+    {% for error in form.non_field_errors %}
+    {{error}}
+    {% endfor %}
+  </div>
+  {% endif %}
+  <form method="post" action="." autocomplete="false" class="form"
+    role="form" id="health-check">
+    {% csrf_token %}
+    {% for field in form.hidden_fields %}
+      {% include "form_field.inc.html" %}
+    {% endfor %}
+    <fieldset id="czechs">
+      <ol style="padding:0 0 0 4px;">
+        <li class="list-item col-6 border-top">
+          <input type="checkbox" name="tested_positive" id="id_positive">
+          <label for="id_positive">
+            <img src="{{static_url}}img/tested_positive.png" style="width:42px;">
+            <small style="display:block;font-weight:600;">
+              Tested positive for COVID-19
+            </small>
+          </label>
+        </li>
+
+        <li class="list-item col-5 border-top">
+          <input type="checkbox" name="tested_negative" id="id_tested_negative">
+          <label for="id_tested_negative">
+            <i class="fa fa-star-o" style="color:green; font-size: 1.9em;margin-top:8px;" aria-hidden="true"></i>
+            <small style="display:block;font-weight:600;">
+              Tested negative for COVID-19
+            </small>
+          </label>
+        </li>
+        <li class="list-item col-6 border-top">
+          <input type="checkbox" name="tested_pending" id="id_tested_pending">
+          <label for="id_tested_pending">
+            <i class="fa fa-envelope-open-o" style="color:#30b0c8;font-size: 1.7em;margin-top: 12px; margin-left:6px;" aria-hidden="true"></i>
+            <small style="display:block;font-weight:600;">
+              Tested and awaiting results
+            </small>
+          </label>
+        </li>
+        <li class="list-item col-5 border-top">
+          <input type="checkbox" name="negative" id="id_negative">
+          <label for="id_negative">
+            <img src="{{static_url}}img/negative.png" style="width:42px;margin-left:-7px;">
+            <small style="display:block;font-weight:600;">
+              No symptoms
+            </small>
+          </label>
+        </li>
+        <li class="list-item col-6 border-top">
+          <input type="checkbox" name="temperature" id="id_temperature">
+          <label for="id_temperature">
+            <img src="{{static_url}}img/temperature.png" style="width:42px;">
+            <small style="display:block;font-weight:600;">
+              Temp ≥ 100.4 F/38.0 C or chills
+            </small>
+          </label>
+        </li>
+        <li class="list-item col-5 border-top">
+          <input type="checkbox" name="loss_taste_smell" id="id_loss_taste_smell">
+          <label for="id_loss_taste_smell">
+            <img src="{{static_url}}img/loss_taste_smell.png" style="width:42px;">
+            <small style="display:block;font-weight:600;">
+              New loss of taste or smell
+            </small>
+          </label>
+        </li>
+        <li class="list-item col-6 border-top">
+          <input type="checkbox" name="short_breath" id="id_short_breath">
+          <label for="id_short_breath">
+            <img src="{{static_url}}img/short_breath.png" style="width:42px;">
+            <small style="display:block;font-weight:600;">
+              Shortness of breath
+            </small>
+          </label>
+        </li>
+        <li class="list-item col-5 border-top">
+          <input type="checkbox" name="cough" id="id_cough">
+          <label for="id_cough">
+            <img src="{{static_url}}img/cough.png" style="width:42px;">
+            <small style="display:block;font-weight:600;">
+              New cough
+            </small>
+          </label>
+        </li>
+        <li class="list-item col-6 border-top">
+          <input type="checkbox" name="sore_throat" id="id_sore_throat">
+          <label for="id_sore_throat">
+            <img src="{{static_url}}img/sore_throat.png" style="width:42px;">
+            <small style="display:block;font-weight:600;">
+              Sore throat
+            </small>
+          </label>
+        </li>
+        <li class="list-item col-5 border-top">
+          <input type="checkbox" name="congestion" id="id_congestion">
+          <label for="id_congestion">
+            <img src="{{static_url}}img/congestion.png" style="width:42px;">
+            <small style="display:block;font-weight:600;">
+              Congestion or runny nose
+            </small>
+          </label>
+        </li>
+        <li class="list-item col-6 border-top">
+          <input type="checkbox" name="fatigue" id="id_fatigue">
+          <label for="id_fatigue">
+            <img src="{{static_url}}img/fatigue.png" style="width:42px;">
+            <small style="display:block;font-weight:600;">
+              New unexplained fatigue
+            </small>
+          </label>
+        </li>
+        <li class="list-item col-5 border-top">
+          <input type="checkbox" name="body_aches" id="id_body_aches">
+          <label for="id_body_aches">
+            <img src="{{static_url}}img/body_aches.png" style="width:42px;">
+            <small style="display:block;font-weight:600;">
+              Muscle or Body Ache
+            </small>
+          </label>
+        </li>
+        <li class="list-item col-6 border-top">
+          <input type="checkbox" name="headache" id="id_headache">
+          <label for="id_headache">
+            <img src="{{static_url}}img/headache.png" style="width:42px;">
+            <small style="display:block;font-weight:600;">
+              New headache
+            </small>
+          </label>
+        </li>
+        <li class="list-item col-5 border-top">
+          <input type="checkbox" name="nausea" id="id_nausea">
+          <label for="id_nausea">
+            <img src="{{static_url}}img/nausea.png" style="width:42px;">
+            <small style="display:block;font-weight:600;">
+              Nausea or vomiting
+            </small>
+          </label>
+        </li>
+        <li class="list-item col-6 border-top">
+          <input type="checkbox" name="diarrhea" id="id_diarrhea">
+          <label for="id_diarrhea">
+            <img src="{{static_url}}img/diarrhea.png" style="width:42px;">
+            <small style="display:block;font-weight:600;">
+              Diarrhea
+            </small>
+          </label>
+        </li>
+        <li class="list-item col-12 border-top">
+          <input type="checkbox" name="quarantine" id="id_quarantine">
+          <label for="id_quarantine">
+            <img src="{{static_url}}img/quarantine.png" style="width:42px;">
+            <small style="display:block;font-weight:600;">
+              Staying in my room/home due to symptoms or suspected COVID exposure
+            </small>
+          </label>
+        </li>
+      </ol>
+    </fieldset>
+    {% if facstaff %}
+    <div class="row ml-2 mb-2">
+        <div class="float-left">
+          <input type="checkbox" name="mobile" id="id_mobile"{% if user.profile.mobile %} checked{% endif %}>
+      </div>
+      <div class="float-left col-11">
+        <small style="display:block;font-weight:600;">
+          <label for="id_mobile" class="float-left mr-1" style="padding:0;display:inherit;" data-toggle="tooltip" data-placement="top" title="Your phone: {{ens.mobile}}. Click the phone icon and log into the portal to update your emergency contact information if you need to add or change your mobile phone number.">
+            I would like to receive health check reminders at my mobile phone.
+          </label>
+          <span class="float-left">
+          {% ifusergroup 'carthageStaffStatus' %}
+            <a href="https://my.carthage.edu/ICS/Staff_Home.jnz?portlet=Emergency_Contact_Information" target="_blank">
+              <i class="fa fa-phone fa-2x" aria-hidden="true"></i></a>
+          {% else %}
+            <a href="https://my.carthage.edu/ICS/Faculty_Home.jnz?portlet=Emergency_Contact" target="_blank">
+              <i class="fa fa-phone fa-2x" aria-hidden="true"></i></a>
+          {% endifusergroup %}
+          </span>
+        </small>
+      </div>
+    </div>
+    {% endif %}
+    <button class="btn btn-primary btn-block" type="submit" value="Submit" id="submit-button">Submit</button>
+  </form>
+  <div class="col-12 col-xs-12 col-sm-12 col-md-12 col-lg-12 col-xl-12 mt-4 ml-2">
+    <div class="row list-group">
+      <p class="ml-2">
+        <button class="btn btn-info" type="button" data-toggle="collapse" data-target="#collapsePrivacy" aria-expanded="false" aria-controls="collapsePrivacy">
+        Questions?
+        </button>
+      </p>
+      {% get_lw_content as help blurbs 3006 %}
+      <div class="collapse" id="collapsePrivacy">
+        <div class="card card-body">
+          <div id="lw_success_3006">{{help.body|safe}}</div>
+          {% if user.is_superuser %}
+          <p>
+            <a href="https://www.carthage.edu/livewhale/?blurbs_edit&tid=285&id=3006"
+              target="_blank">
+              <i class="fa fa-pencil green" aria-hidden="true"
+              title="Manage the content above in LiveWhale"></i></a>
+            <a href="#" data-cid="3006" data-target="lw_success_3006" class="clear-cache">
+              <i class="fa fa-refresh green" aria-hidden="true"
+              title="Clear the cache for this content"></i></a>
+          </p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <!-- /.row -->
+  </div>
+  <!-- /.col-* -->
+  <p>&nbsp;</p>
+</div>
+<!-- /.forms-container /.col-* -->
+{% endblock content %}
+{% block modal %}{% endblock %}

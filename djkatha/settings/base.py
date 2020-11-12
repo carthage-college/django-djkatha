@@ -51,7 +51,7 @@ STATIC_ROOT = '{}/static/'.format(ROOT_DIR)
 MEDIA_URL = '{}assets/'.format(STATIC_URL)
 UPLOADS_DIR = '{}files/'.format(MEDIA_ROOT)
 UPLOADS_URL = '{}files/'.format(MEDIA_URL)
-ROOT_URLCONF = 'djkatha.core.urls'
+ROOT_URLCONF = 'djkatha.urls'
 WSGI_APPLICATION = 'djkatha.wsgi.application'
 STATICFILES_DIRS = ()
 STATICFILES_FINDERS = (
@@ -65,7 +65,6 @@ DATABASES = {
         'PORT': '3306',
         'NAME': 'django_djkatha',
         'ENGINE': 'django.db.backends.mysql',
-        #'ENGINE': 'django.db.backends.dummy',
         'USER': '',
         'PASSWORD': ''
     },
@@ -79,10 +78,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.staticfiles',
-    'djkatha.core',
-    # 'djsapo.dashboard',
     # needed for template tags
     'djtools',
+    # honeypot for admin attacks
+    'admin_honeypot',
+    # sign in as a user
+    'loginas',
 ]
 MIDDLEWARE_CLASSES = [
     'django.middleware.security.SecurityMiddleware',
@@ -260,7 +261,7 @@ LOGGING = {
         },
         'error_logfile': {
             'level': 'ERROR',
-            'filters': ['require_debug_true'], # do not run error logger in production
+            #'filters': ['require_debug_true'], # do not run error logger in production
             'class': 'logging.FileHandler',
             'filename': ERROR_LOG_FILENAME,
             'formatter': 'verbose'
@@ -272,12 +273,27 @@ LOGGING = {
         },
         'mail_admins': {
             'level': 'ERROR',
-            'filters': ['require_debug_false'],
+            #'filters': ['require_debug_false'],
             'include_html': True,
             'class': 'django.utils.log.AdminEmailHandler'
         }
     },
     'loggers': {
+        'redpanda': {
+            'handlers':['debug_logfile'],
+            'propagate': True,
+            'level':'DEBUG',
+        },
+        'redpanda.lynx': {
+            'handlers':['debug_logfile'],
+            'propagate': True,
+            'level':'DEBUG',
+        },
+        'redpanda.core': {
+            'handlers':['debug_logfile'],
+            'propagate': True,
+            'level':'DEBUG',
+        },
         'error_logger': {
             'handlers': ['error_logfile'],
             'level': 'ERROR'
@@ -302,7 +318,7 @@ LOGGING = {
             'propagate': False,
         },
         'django.request': {
-            'handlers': ['mail_admins'],
+            'handlers': ['mail_admins', 'error_logfile'],
             'level': 'ERROR',
             'propagate': True,
         },
@@ -327,3 +343,25 @@ BB_SKY_SUBSCRIPTION_KEY = ''
 BB_LOG_FOLDER = ''
 BB_SKY_TO_EMAIL = ''
 BB_SKY_FROM_EMAIL = ''
+
+##################
+# LOCAL SETTINGS #
+##################
+
+# Allow any settings to be defined in local.py which should be
+# ignored in your version control system allowing for settings to be
+# defined per machine.
+
+# Instead of doing "from .local import *", we use exec so that
+# local has full access to everything defined in this module.
+# Also force into sys.modules so it's visible to Django's autoreload.
+
+phile = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'local.py')
+if os.path.exists(phile):
+    import imp
+    import sys
+    module_name = '{0}.settings.local'.format(PROJECT_APP)
+    module = imp.new_module(module_name)
+    module.__file__ = phile
+    sys.modules[module_name] = module
+    exec(open(phile, 'rb').read())

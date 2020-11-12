@@ -10,9 +10,10 @@ import django
 from cryptography import fernet
 from cryptography.fernet import Fernet
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "djequis.settings")
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'djkatha.settings.shell')
+
 django.setup()
-# ________________
+
 from django.conf import settings
 from django.core.cache import cache
 
@@ -26,11 +27,9 @@ urlSafeEncodedStr = str(urlSafeEncodedBytes)
 key = fernet.Fernet.generate_key()
 type(key)
 
+
 def get_initial_token():
-    """
-    Execute process for user to authenticate and generate an OAUTH2
-     token to the SKY API
-    """
+    """Authenticate and generate an OAUTH2 token to the SKY API."""
     # step A - simulate a request from a browser on the authorize_url:
     # will return an authorization code after the user is
     # prompted for credentials.
@@ -49,22 +48,23 @@ def get_initial_token():
     print("---  " + authorization_redirect_url + "  ---")
     authorization_code = input("Paste code here: ")
 
-
     # STEP 2: Take initial token, retrieve access codes and floater token
     ref_token_getter = requests.post(
-        url='https://oauth2.sky.blackbaud.com/token',
+        url=settings.BB_SKY_TOKEN_URL,
         headers={'Content-Type': 'application/x-www-form-urlencoded'},
-        data={'grant_type': 'authorization_code',
-              'code': authorization_code,
-              'client_id': settings.BB_SKY_CLIENT_ID,
-              'client_secret': settings.BB_SKY_CLIENT_SECRET,
-              'redirect_uri': settings.BB_SKY_CALLBACK_URI}
+        data={
+            'grant_type': 'authorization_code',
+            'code': authorization_code,
+            'client_id': settings.BB_SKY_CLIENT_ID,
+            'client_secret': settings.BB_SKY_CLIENT_SECRET,
+            'redirect_uri': settings.BB_SKY_CALLBACK_URI,
+        },
     )
 
     tokens_dict = dict(json.loads(ref_token_getter.text))
-
+    print(tokens_dict)
     frn = fernet.Fernet(key)
-
+    print(frn)
     refresh_token = tokens_dict['refresh_token']
     access_token = tokens_dict['access_token']
 
@@ -72,8 +72,8 @@ def get_initial_token():
 
     x = cache.get('tokenkey')
     y = cache.get('refreshkey')
-    # print(x)
-    # print(y)
+    print(x)
+    print(y)
 
     return 1
 
