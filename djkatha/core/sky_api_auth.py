@@ -10,11 +10,6 @@ import django
 import datetime as dt
 from datetime import datetime
 
-# Note to self, keep this here
-# django settings for shell environment
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "djequis.settings")
-django.setup()
-
 from djkatha.core.utilities import fn_write_error, fn_send_mail
 from django.conf import settings
 from django.core.cache import cache
@@ -132,9 +127,9 @@ def fn_do_token():
                      "Error in sky_pi_auth.py - fn_do_token: " + repr(e))
         return 0
 
+
 # def main():
 #     x = fn_do_token()
 #     print("Return = " + str(x))
 #
 # main()
-

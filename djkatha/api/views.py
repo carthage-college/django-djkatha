@@ -6,8 +6,12 @@ from django.conf import settings
 from django.shortcuts import render
 
 
-def call_back(request):
+def callback(request):
     """Call back from raiser's edge API."""
+    if request.method=='POST':
+        response = request.POST
+    else:
+        response = request.GET
     return render(
-        request, 'api/call_back.html', {'response': request.response},
+        request, 'api/callback.html', {'response': response},
     )

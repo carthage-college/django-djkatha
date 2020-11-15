@@ -54,6 +54,6 @@ urlpatterns = [
     ),
     # raiser's edge api
     path(
-        'api/callback/', views.call_back, name='call_back',
+        'api/callback/', views.callback, name='callback',
     ),
 ]

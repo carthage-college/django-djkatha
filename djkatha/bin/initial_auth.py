@@ -17,9 +17,9 @@ django.setup()
 from django.conf import settings
 from django.core.cache import cache
 
-AUTHORIZATION = 'Basic ' + settings.BB_SKY_CLIENT_ID + ":" \
+AUTHORIZATION = 'Basic ' + settings.BB_SKY_CLIENT_ID + ':' \
                 + settings.BB_SKY_CLIENT_SECRET
-urlSafeEncodedBytes = base64.urlsafe_b64encode(AUTHORIZATION.encode("utf-8"))
+urlSafeEncodedBytes = base64.urlsafe_b64encode(AUTHORIZATION.encode('utf-8'))
 urlSafeEncodedStr = str(urlSafeEncodedBytes)
 
 # For Cryptography,
@@ -78,8 +78,4 @@ def get_initial_token():
     return 1
 
 
-def main():
-    ret = get_initial_token()
-
-
-main()
+get_initial_token()

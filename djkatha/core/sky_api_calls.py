@@ -15,18 +15,15 @@ import arrow
 from djkatha.core.utilities import fn_write_error, fn_send_mail
 
 from datetime import datetime
-# Note to self, keep this here
-# django settings for shell environment
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "djequis.settings")
-django.setup()
 # ________________
 from django.conf import settings
 from django.core.cache import cache
 
+
 def api_get(current_token, url):
     # print("In api_get")
     # print(url)
- 
+
     try:
         params = {'HOST': 'api.sky.blackbaud.com'}
         status = 0

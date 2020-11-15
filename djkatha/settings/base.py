@@ -41,18 +41,19 @@ FILE_CHARSET = 'utf-8'
 SERVER_URL = ''
 API_URL = '{}/{}'.format(SERVER_URL, 'api')
 LIVEWHALE_API_URL = 'https://{}'.format(SERVER_URL)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ROOT_DIR = os.path.dirname(__file__)
-ADMIN_MEDIA_PREFIX = '/static/admin/'
-STATIC_URL = '/static/djkatha/'
-ROOT_URL = '/djkatha/'
-MEDIA_ROOT = '{}/assets/'.format(ROOT_DIR)
-STATIC_ROOT = '{}/static/'.format(ROOT_DIR)
-MEDIA_URL = '{}assets/'.format(STATIC_URL)
-UPLOADS_DIR = '{}files/'.format(MEDIA_ROOT)
-UPLOADS_URL = '{}files/'.format(MEDIA_URL)
 ROOT_URLCONF = 'djkatha.urls'
 WSGI_APPLICATION = 'djkatha.wsgi.application'
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT_DIR = BASE_DIR
+PROJECT_APP = os.path.basename(BASE_DIR)
+ROOT_URL = '/{0}/'.format(PROJECT_APP)
+ADMIN_MEDIA_PREFIX = '/static/admin/'
+MEDIA_ROOT = '{0}/assets/'.format(ROOT_DIR)
+STATIC_ROOT = '{0}/static/'.format(ROOT_DIR)
+STATIC_URL = '/static/{0}/'.format(PROJECT_APP)
+MEDIA_URL = '/media/{0}/'.format(PROJECT_APP)
+UPLOADS_DIR = '{0}files/'.format(MEDIA_ROOT)
+UPLOADS_URL = '{0}files/'.format(MEDIA_URL)
 STATICFILES_DIRS = ()
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
@@ -85,7 +86,7 @@ INSTALLED_APPS = [
     # sign in as a user
     'loginas',
 ]
-MIDDLEWARE_CLASSES = [
+MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.middleware.cache.UpdateCacheMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -182,8 +183,8 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-LOGIN_URL = '{}accounts/login/'.format(ROOT_URL)
-LOGOUT_URL = '{}accounts/logout/'.format(ROOT_URL)
+LOGIN_URL = '{0}accounts/login/'.format(ROOT_URL)
+LOGOUT_URL = '{0}accounts/logout/'.format(ROOT_URL)
 LOGIN_REDIRECT_URL = ROOT_URL
 USE_X_FORWARDED_HOST = True
 #SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
