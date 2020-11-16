@@ -85,7 +85,7 @@ def main():
         # This calls sky_constituent list to grab any recently added IDs
         check_for_constituents(EARL)
 
-        print('student status 1')
+        # print('student status 1')
         datetimestr = time.strftime('%Y%m%d%H%M%S')
         # Defines file names and directory location
         RE_STU_LOG = settings.BB_LOG_FOLDER + 'RE_student_status' \
@@ -231,14 +231,14 @@ def main():
                 )
 
             else:
-                print("No changes found")
+                # print("No changes found")
                 fn_send_mail(
                     settings.BB_SKY_TO_EMAIL,
                     settings.BB_SKY_FROM_EMAIL,
                     "SKY API:  Last run was: {0}".format(str(last_sql_date)),
                     "No new records for Blackbaud.",
                 )
-                print(last_sql_date)
+                # print(last_sql_date)
 
     except Exception as e:
         print("Error in main: {0}".format(repr(e)))
