@@ -10,10 +10,8 @@ Python functions to
 import os
 import sys
 import argparse
-import datetime
-from datetime import date, timedelta, datetime
+from datetime import datetime
 import time
-from time import strftime
 
 # django settings for shell environment
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "djkatha.settings.shell")
@@ -31,17 +29,18 @@ os.environ['INFORMIXDIR'] = settings.INFORMIXDIR
 os.environ['ODBCINI'] = settings.ODBCINI
 os.environ['ONCONFIG'] = settings.ONCONFIG
 os.environ['INFORMIXSQLHOSTS'] = settings.INFORMIXSQLHOSTS
-# ________________
+
 # import sky_constituent_list
-from sky_constituent_list import check_for_constituents
 from django.conf import settings
 from django.core.cache import cache
-from djkatha.core.utilities import fn_write_error, fn_send_mail
+from djimix.core.utils import get_connection
+from djimix.core.utils import xsql
+from djkatha.core.utilities import fn_send_mail
+from djkatha.core.utilities import fn_write_error
 from djkatha.core.sky_api_auth import fn_do_token
-from djkatha.core.sky_api_calls import get_const_custom_fields, \
-    update_const_custom_fields
-
-from djimix.core.utils import get_connection, xsql
+from djkatha.core.sky_api_calls import get_const_custom_fields
+from djkatha.core.sky_api_calls import update_const_custom_fields
+from sky_constituent_list import check_for_constituents
 
 # normally set as 'debug" in SETTINGS
 DEBUG = settings.INFORMIX_DEBUG
@@ -51,20 +50,21 @@ desc = """
 parser = argparse.ArgumentParser(description=desc)
 
 parser.add_argument(
-    "--test",
+    '--test',
     action='store_true',
     help="Dry run?",
-    dest="test"
+    dest='test',
 )
 parser.add_argument(
-    "-d", "--database",
+    '-d',
+    '--database',
     help="database name.",
-    dest="database"
+    dest='database',
 )
+
 
 def main():
     try:
-
         # set global variable
         global EARL
 
@@ -74,14 +74,19 @@ def main():
         elif database == 'train':
             EARL = settings.INFORMIX_ODBC_TRAIN
 
-        """To get the last query date from cache"""
+        # To get the last query date from cache
         last_sql_date = cache.get('Sql_date')
-        # print(last_sql_date)
+        if not last_sql_date:
+           # set a new date in cache
+            a = datetime.now()
+            last_sql_date = a.strftime('%Y-%m-%d %H:%M:%S')
+            cache.set('Sql_date', last_sql_date)
 
         # This calls sky_constituent list to grab any recently added IDs
         check_for_constituents(EARL)
 
-        datetimestr = time.strftime("%Y%m%d%H%M%S")
+        print('student status 1')
+        datetimestr = time.strftime('%Y%m%d%H%M%S')
         # Defines file names and directory location
         RE_STU_LOG = settings.BB_LOG_FOLDER + 'RE_student_status' \
                      + datetimestr + ".txt"
@@ -145,8 +150,7 @@ def main():
             '''.format(last_sql_date)
 
         # print(statquery)
-        connection = get_connection(EARL)
-        with connection:
+        with get_connection(EARL) as connection:
             data_result = xsql(statquery, connection).fetchall()
             ret = list(data_result)
             if ret:
@@ -219,32 +223,32 @@ def main():
                         # print("Nobody home")
                         pass
                 print("Process complete")
-                fn_send_mail(settings.BB_SKY_TO_EMAIL,
-                             settings.BB_SKY_FROM_EMAIL,
-                             "SKY API:  Last run was: " + str(last_sql_date),
-                             "New records processed for Blackbaud: "
-                             )
+                fn_send_mail(
+                    settings.BB_SKY_TO_EMAIL,
+                    settings.BB_SKY_FROM_EMAIL,
+                    "SKY API:  Last run was: {0}".format(str(last_sql_date)),
+                    "New records processed for Blackbaud.",
+                )
 
             else:
-                 print("No changes found")
-                 fn_send_mail(settings.BB_SKY_TO_EMAIL,
-                             settings.BB_SKY_FROM_EMAIL,
-                              "SKY API:  Last run was: " + str(last_sql_date),
-                             "No new records for Blackbaud: ")
-                 print(last_sql_date)
-
-        """To set a new date in cache"""
-        a = datetime.now()
-        last_sql_date = a.strftime('%Y-%m-%d %H:%M:%S')
-        cache.set('Sql_date', last_sql_date)
+                print("No changes found")
+                fn_send_mail(
+                    settings.BB_SKY_TO_EMAIL,
+                    settings.BB_SKY_FROM_EMAIL,
+                    "SKY API:  Last run was: {0}".format(str(last_sql_date)),
+                    "No new records for Blackbaud.",
+                )
+                print(last_sql_date)
 
     except Exception as e:
-        print("Error in main:  " + repr(e))
-        fn_write_error("Error in student_status.py - Main: "
-                       + repr(e))
-        fn_send_mail(settings.BB_SKY_TO_EMAIL,
-                     settings.BB_SKY_FROM_EMAIL, "SKY API ERROR", "Error in "
-                                "student_status.py - for: " + repr(e))
+        print("Error in main: {0}".format(repr(e)))
+        fn_write_error("Error in student_status.py - Main: %s" % repr(e))
+        fn_send_mail(
+            settings.BB_SKY_TO_EMAIL,
+            settings.BB_SKY_FROM_EMAIL,
+            "Error in student_status.py - for: {0}".format(repr(e)),
+            "SKY API ERROR",
+        )
 
 
 if __name__ == "__main__":
@@ -267,6 +271,6 @@ if __name__ == "__main__":
     if not test:
         test = 'prod'
     else:
-        test = "test"
+        test = 'test'
 
     sys.exit(main())

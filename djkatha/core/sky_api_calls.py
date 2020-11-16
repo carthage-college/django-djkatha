@@ -5,19 +5,14 @@ import requests
 import os
 import json
 import time
-# import base64
 import datetime
-from datetime import datetime, date, timedelta, timezone
-import django
 import csv
 import arrow
 
-from djkatha.core.utilities import fn_write_error, fn_send_mail
+from djkatha.core.utilities import fn_send_mail
+from djkatha.core.utilities import fn_write_error
 
-from datetime import datetime
-# ________________
 from django.conf import settings
-from django.core.cache import cache
 
 
 def api_get(current_token, url):
@@ -256,7 +251,7 @@ def get_custom_fields(current_token):
 
 def get_constituents_custom_field_list(current_token, searchtime):
 
-    a = datetime.strptime(str(searchtime), '%Y-%m-%d')
+    a = datetime.datetime.strptime(str(searchtime), '%Y-%m-%d %H:%M:%S')
     # print(a)
     x = a.isoformat()
     # print(x)

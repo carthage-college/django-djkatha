@@ -10,29 +10,19 @@ Python functions to
 # import requests
 import sys
 import os
-# import argparse
 import pyodbc
-import datetime
-from datetime import datetime, date, timedelta
-from time import strftime, strptime
-import django
-
-
-# Note to self, keep this here
-# django settings for shell environment
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "djkatha.settings.shell")
-django.setup()
-# ________________
 
 # django settings for script
 from django.conf import settings
 from django.core.cache import cache
 
-from djkatha.core.utilities import fn_write_error, fn_send_mail
+from djkatha.core.utilities import fn_send_mail
+from djkatha.core.utilities import fn_write_error
 from djkatha.core.sky_api_auth import fn_do_token
-from djkatha.core.sky_api_calls import get_constituents_custom_field_list, \
-    get_lookup_id
-from djimix.core.utils import get_connection, xsql
+from djkatha.core.sky_api_calls import get_constituents_custom_field_list
+from djkatha.core.sky_api_calls import get_lookup_id
+from djimix.core.utils import get_connection
+from djimix.core.utils import xsql
 
 # informix environment
 os.environ['INFORMIXSERVER'] = settings.INFORMIXSERVER
@@ -70,12 +60,10 @@ def fn_update_local(carth_id, bb_id, EARL):
 
 def check_for_constituents(EARL):
     try:
-
-
         """"--------GET THE TOKEN------------------"""
         current_token = fn_do_token()
 
-        """-----Get a list of constituents with a custom field of 
+        """-----Get a list of constituents with a custom field of
             Student Status - STORE the id in cvid_rec-------"""
         """---We need this to match Carthage ID to Blackbaud ID------"""
 
@@ -85,9 +73,8 @@ def check_for_constituents(EARL):
            can read that csv and find the BB_ID only for those students"""
 
         """The date of the last search will be stored in Cache"""
-        searchtime = cache.get('last_const_date')
-
-
+        #searchtime = cache.get('last_const_date')
+        searchtime = cache.get('Sql_date')
         # API call to get BB ID
         x = get_constituents_custom_field_list(current_token, str(searchtime))
         if x == 0:
