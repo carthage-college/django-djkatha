@@ -1,14 +1,16 @@
-# from pathlib import Path
-import requests
-import os
-import json
-import time
+#! /usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import base64
-import datetime
 import cryptography
+import datetime
 import django
+import json
+import os
+import requests
+import sys
+import time
 from cryptography import fernet
-from cryptography.fernet import Fernet
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'djkatha.settings.shell')
 
@@ -17,16 +19,6 @@ django.setup()
 from django.conf import settings
 from django.core.cache import cache
 
-AUTHORIZATION = 'Basic ' + settings.BB_SKY_CLIENT_ID + ':' \
-                + settings.BB_SKY_CLIENT_SECRET
-urlSafeEncodedBytes = base64.urlsafe_b64encode(AUTHORIZATION.encode('utf-8'))
-urlSafeEncodedStr = str(urlSafeEncodedBytes)
-
-# For Cryptography,
-# This only needs to happen once...store and re-use
-key = fernet.Fernet.generate_key()
-type(key)
-
 
 def get_initial_token():
     """Authenticate and generate an OAUTH2 token to the SKY API."""
@@ -34,10 +26,13 @@ def get_initial_token():
     # will return an authorization code after the user is
     # prompted for credentials.
 
-    authorization_redirect_url = settings.BB_SKY_AUTHORIZE_URL + \
-                                 '?response_type=code&client_id=' + \
-                                 settings.BB_SKY_CLIENT_ID + '&redirect_uri=' \
-                                 + settings.BB_SKY_CALLBACK_URI
+    authorization_redirect_url = '{0}{1}{2}{3}{4}'.format(
+        settings.BB_SKY_AUTHORIZE_URL,
+        '?response_type=code&client_id=',
+        settings.BB_SKY_CLIENT_ID,
+        '&redirect_uri=',
+        settings.BB_SKY_CALLBACK_URI,
+    )
 
     print("Click the following url and authorize. It will redirect you to a "
            "blank website with the url"
@@ -45,7 +40,7 @@ def get_initial_token():
            "(after the '=' sign). "
            "Paste that code into the prompt below.")
 
-    print("---  " + authorization_redirect_url + "  ---")
+    print("---  {0}  ---".format(authorization_redirect_url))
     authorization_code = input("Paste code here: ")
 
     # STEP 2: Take initial token, retrieve access codes and floater token
@@ -60,6 +55,10 @@ def get_initial_token():
             'redirect_uri': settings.BB_SKY_CALLBACK_URI,
         },
     )
+
+    # For Cryptography,
+    # This only needs to happen once...store and re-use
+    key = fernet.Fernet.generate_key()
 
     tokens_dict = dict(json.loads(ref_token_getter.text))
     print(tokens_dict)
@@ -78,4 +77,5 @@ def get_initial_token():
     return 1
 
 
-get_initial_token()
+if __name__ == '__main__':
+    sys.exit(get_initial_token())

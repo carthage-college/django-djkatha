@@ -10,8 +10,9 @@ Python functions to
 import os
 import sys
 import argparse
-from datetime import datetime
+import datetime
 import time
+import traceback
 
 # django settings for shell environment
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "djkatha.settings.shell")
@@ -78,7 +79,7 @@ def main():
         last_sql_date = cache.get('Sql_date')
         if not last_sql_date:
            # set a new date in cache
-            a = datetime.now()
+            a = datetime.datetime.now()
             last_sql_date = a.strftime('%Y-%m-%d %H:%M:%S')
             cache.set('Sql_date', last_sql_date)
 
@@ -240,14 +241,17 @@ def main():
                 )
                 # print(last_sql_date)
 
-    except Exception as e:
-        print("Error in main: {0}".format(repr(e)))
-        fn_write_error("Error in student_status.py - Main: %s" % repr(e))
+    except Exception as error:
+        print("Error in main: {0}".format(repr(error)))
+        stack = traceback.print_exc()
+        print(stack)
+        fn_write_error("Error in student_status.py - Main: %s" % repr(error))
+        fn_write_error("Stack trace: %s" % repr(stack))
         fn_send_mail(
             settings.BB_SKY_TO_EMAIL,
             settings.BB_SKY_FROM_EMAIL,
-            "Error in student_status.py - for: {0}".format(repr(e)),
-            "SKY API ERROR",
+            "Error in student_status.py: {0}".format(repr(error)),
+            "SKY API ERROR: {0}".format(stack),
         )
 
 
