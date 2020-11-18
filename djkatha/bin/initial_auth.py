@@ -22,8 +22,8 @@ from django.core.cache import cache
 
 def get_initial_token():
     """Authenticate and generate an OAUTH2 token to the SKY API."""
-    # step A - simulate a request from a browser on the authorize_url:
-    # will return an authorization code after the user is
+    # Step 1: simulate a request from a browser on the authorize_url,
+    # which will return an authorization code after the user is
     # prompted for credentials.
 
     authorization_redirect_url = '{0}{1}{2}{3}{4}'.format(
@@ -34,11 +34,13 @@ def get_initial_token():
         settings.BB_SKY_CALLBACK_URI,
     )
 
-    print("Click the following url and authorize. It will redirect you to a "
-           "blank website with the url"
-           " 'https://127.0.0.1/?code=xxxx'. Copy the value of the code "
-           "(after the '=' sign). "
-           "Paste that code into the prompt below.")
+    print(
+        "Click the following url and authorize. It will redirect you to a "
+        "blank website with the url"
+        " 'https://127.0.0.1/?code=xxxx'. Copy the value of the code "
+        "(after the '=' sign). "
+        "Paste that code into the prompt below."
+    )
     print("---  {0}  ---".format(authorization_redirect_url))
     authorization_code = input("Paste code here: ")
 
