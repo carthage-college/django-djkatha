@@ -80,6 +80,7 @@ def check_for_constituents(EARL):
         if x == 0:
             print("No recent student entries in RE")
         else:
+            print(x)
             for i in x['value']:
                 bb_id = i["parent_id"]
                 # Look for ID in cvid_rec

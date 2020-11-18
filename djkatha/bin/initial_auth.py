@@ -62,6 +62,7 @@ def get_initial_token():
     access_token = tokens_dict['access_token']
 
     cache.set('tokenkey', access_token)
+    cache.set('refresh_token', refresh_token)
 
     print('token type = {0}'.format(tokens_dict['token_type']))
     print('access token (key) = {0}'.format(cache.get('tokenkey')))

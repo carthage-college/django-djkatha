@@ -1,23 +1,16 @@
-# from pathlib import Path
-import requests
-import os
-import json
+# -*- coding: utf-8 -*-
+
 import base64
-import django
+import datetime
+import json
+import os
+import requests
+import traceback
 
-# import time
-# import datetime
-import datetime as dt
-from datetime import datetime
-
-from djkatha.core.utilities import fn_write_error, fn_send_mail
 from django.conf import settings
 from django.core.cache import cache
-
-AUTHORIZATION = 'Basic ' + settings.BB_SKY_CLIENT_ID + ":" \
-                + settings.BB_SKY_CLIENT_SECRET
-urlSafeEncodedBytes = base64.urlsafe_b64encode(AUTHORIZATION.encode("utf-8"))
-urlSafeEncodedStr = str(urlSafeEncodedBytes)
+from djkatha.core.utilities import fn_send_mail
+from djkatha.core.utilities import fn_write_error
 
 
 def fn_token_refresh():
@@ -27,19 +20,20 @@ def fn_token_refresh():
         # the current (unexpired) refresh token. Writes updated tokens
         # to appropriate files for subsequent reference
         # :return: Tuple containing (return_code, access_token, refresh_token)
-        refresh_token = cache.get('refreshkey')
+        refresh_token = cache.get('refresh_token')
         # print(refresh_token)
         ref_token_call = requests.post(
             url='https://oauth2.sky.blackbaud.com/token',
             headers={'Content-Type': 'application/x-www-form-urlencoded'},
-            data={'grant_type': 'refresh_token',
-                  'refresh_token': refresh_token,
-                  'client_id': settings.BB_SKY_CLIENT_ID,
-                  ## **** Can we enable this?
-                  # ***'preserve_refresh_token': 'true',
-                  'client_secret': settings.BB_SKY_CLIENT_SECRET,
-                  # 'redirect_uri': settings.BB_SKY_CALLBACK_URI
-                  }
+            data={
+                'grant_type': 'refresh_token',
+                'refresh_token': refresh_token,
+                'client_id': settings.BB_SKY_CLIENT_ID,
+                ## **** Can we enable this?
+                # ***'preserve_refresh_token': 'true',
+                'client_secret': settings.BB_SKY_CLIENT_SECRET,
+                # 'redirect_uri': settings.BB_SKY_CALLBACK_URI
+            },
         )
 
         status = ref_token_call.status_code
@@ -51,8 +45,8 @@ def fn_token_refresh():
             access_token = tokens_dict['access_token']
 
             cache.set('tokenkey', access_token)
-            cache.set('refreshkey', refresh_token)
-            cache.set('refreshtime', datetime.now())
+            cache.set('refresh_token', refresh_token)
+            cache.set('refreshtime', datetime.datetime.now())
 
             # print(access_token)
             # print(refresh_token)
@@ -72,14 +66,21 @@ def fn_token_refresh():
             exit()
             return 0
         else:
+            print('here')
             fn_write_error('ERROR:  ' + str(status))
             return 0
-    except Exception as e:
-        # print("Error in token_refresh:  " + e.message)
-        fn_write_error("Error in token_refresh.py - Main: " + repr(e))
-        fn_send_mail(settings.BB_SKY_TO_EMAIL,
-                     settings.BB_SKY_FROM_EMAIL, "SKY API ERROR",
-                     "Error in sky_pi_auth.py - fn_token_refresh: " + repr(e))
+    except Exception as error:
+        print("Error in token_refresh:  " + error.message)
+        fn_write_error("Error in token_refresh.py - Main: " + repr(error))
+        stack = traceback.print_exc()
+        print(stack)
+        fn_write_error("Stack trace: %s" % repr(stack))
+        fn_send_mail(
+            settings.BB_SKY_TO_EMAIL,
+            settings.BB_SKY_FROM_EMAIL,
+            "SKY API ERROR",
+            "Error in sky_pi_auth.py - fn_token_refresh: %s" % repr(error),
+        )
         return 0
 
 def fn_do_token():
@@ -88,25 +89,26 @@ def fn_do_token():
         it will be necessary to refresh the token before attempting
         anything else.   The refresh token will be valid for 60 days,
         so it should return a new token with no problem.  All the API
-        calls will get new tokens, resetting the 60 minute clock, 
-        so to avoid calling for a token every time, I may have to 
+        calls will get new tokens, resetting the 60 minute clock,
+        so to avoid calling for a token every time, I may have to
         either set a timer or see if I can read the date and time from the
         cache files and compare to current time
      """
     try:
-        """Check to see if the token has expired, if so refresh it
-            the token expires in 60 minutes, but the refresh token
-            is good for 60 days"""
+        """
+        Check to see if the token has expired, if so refresh it
+        the token expires in 60 minutes, but the refresh token
+        is good for 60 days
+        """
         t = cache.get('refreshtime')
-        # print(t)
 
         if t is None:
             r = fn_token_refresh()
-            # print(r)
-        elif t < datetime.now() - dt.timedelta(minutes=59):
+            print(r)
+        elif t < datetime.datetime.now() - dt.timedelta(minutes=59):
             # print('Out of limit')
             # print(t)
-            # print(datetime.now() - dt.timedelta(minutes=59))
+            # print(datetime.datetime.now() - dt.timedelta(minutes=59))
             r = fn_token_refresh()
             # print(r)
         else:
