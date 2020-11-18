@@ -64,11 +64,11 @@ def get_initial_token():
     cache.set('tokenkey', access_token)
 
     print('token type = {0}'.format(tokens_dict['token_type']))
-    print('access token = {0}'.format(cache.get('tokenkey')))
+    print('access token (key) = {0}'.format(cache.get('tokenkey')))
     print('access token expires in = {0} seconds (1 hour)'.format(
         tokens_dict['expires_in'],
     ))
-    print('refresh token = {0}'.format(refresh_token))
+    print('refresh token (key) = {0}'.format(refresh_token))
     print('refresh token expires in = {0} seconds (1 year)'.format(
         tokens_dict['refresh_token_expires_in'],
     ))
