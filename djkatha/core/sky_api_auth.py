@@ -105,10 +105,10 @@ def fn_do_token():
         if t is None:
             r = fn_token_refresh()
             print(r)
-        elif t < datetime.datetime.now() - dt.timedelta(minutes=59):
+        elif t < datetime.datetime.now() - datetime.timedelta(minutes=59):
             # print('Out of limit')
             # print(t)
-            # print(datetime.datetime.now() - dt.timedelta(minutes=59))
+            # print(datetime.datetime.now() - datetime.timedelta(minutes=59))
             r = fn_token_refresh()
             # print(r)
         else:
