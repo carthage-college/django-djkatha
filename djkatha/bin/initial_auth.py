@@ -1,16 +1,11 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import base64
-import cryptography
-import datetime
 import django
 import json
 import os
 import requests
 import sys
-import time
-from cryptography import fernet
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'djkatha.settings.shell')
 
@@ -63,15 +58,19 @@ def get_initial_token():
     refresh_token = tokens_dict['refresh_token']
     access_token = tokens_dict['access_token']
 
-    cache.set('tokenkey', access_token)
-    cache.set('refresh_token', refresh_token)
+    cache.set(settings.BB_SKY_TOKEN_CACHE_KEY, access_token)
+    cache.set(settings.BB_SKY_REFRESH_TOKEN_CACHE_KEY, refresh_token)
 
     print('token type = {0}'.format(tokens_dict['token_type']))
-    print('access token (key) = {0}'.format(cache.get('tokenkey')))
+    print('access token (key) = {0}'.format(
+        cache.get(settings.BB_SKY_TOKEN_CACHE_KEY),
+    ))
     print('access token expires in = {0} seconds (1 hour)'.format(
         tokens_dict['expires_in'],
     ))
-    print('refresh token (key) = {0}'.format(refresh_token))
+    print('refresh token (key) = {0}'.format(
+        cache.get(settings.BB_SKY_REFRESH_TOKEN_CACHE_KEY),
+    ))
     print('refresh token expires in = {0} seconds (1 year)'.format(
         tokens_dict['refresh_token_expires_in'],
     ))

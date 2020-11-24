@@ -60,6 +60,7 @@ production.py
 wsgi.py
 migrations
 uwsgi.*.ini
+notes.txt
 
 # Scrapy stuff:
 .scrapy

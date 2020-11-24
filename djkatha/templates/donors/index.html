@@ -1,0 +1,23 @@
+{% extends "home.html" %}
+{% load humanize %}
+{% block content %}
+<div class="forms-container col-lg-8 col-md-8 col-sm-12 col-xs-12 mb-4" style="padding-right:0px !important;">
+<ul>
+{% for obj in donors %}
+    {% ifchanged obj.last and ifchanged obj.first %}
+        {% ifchanged obj.last|lower|slice:":1" %}
+            </ul>
+            <h3 style="margin-bottom: 2px;">
+                {{obj.last|title|slice:":1"}}
+            </h3>
+            <hr>
+            <ul>
+        {% endifchanged %}
+        <li>
+            {{obj.last}}, {{obj.first|title}}
+        </li>
+    {% endifchanged %}
+{% endfor %}
+</ul>
+</div>
+{% endblock %}

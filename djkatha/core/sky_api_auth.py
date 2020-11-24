@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import base64
 import datetime
 import json
 import os
@@ -15,12 +14,13 @@ from djkatha.core.utilities import fn_write_error
 
 def fn_token_refresh():
     # print("In token_refresh")
+    now = datetime.datetime.now()
     try:
         # Generates a new OAUTH2 access token and refresh token using
         # the current (unexpired) refresh token. Writes updated tokens
         # to appropriate files for subsequent reference
         # :return: Tuple containing (return_code, access_token, refresh_token)
-        refresh_token = cache.get('refresh_token')
+        refresh_token = cache.get(settings.BB_SKY_REFRESH_TOKEN_CACHE_KEY)
         # print(refresh_token)
         ref_token_call = requests.post(
             url='https://oauth2.sky.blackbaud.com/token',
@@ -44,9 +44,9 @@ def fn_token_refresh():
             refresh_token = tokens_dict['refresh_token']
             access_token = tokens_dict['access_token']
 
-            cache.set('tokenkey', access_token)
-            cache.set('refresh_token', refresh_token)
-            cache.set('refreshtime', datetime.datetime.now())
+            cache.set(settings.BB_SKY_TOKEN_CACHE_KEY, access_token)
+            cache.set(settings.BB_SKY_REFRESH_TOKEN_CACHE_KEY, refresh_token)
+            cache.set(settings.BB_SKY_REFRESH_TIME_CACHE_KEY, now)
 
             # print(access_token)
             # print(refresh_token)
@@ -70,8 +70,8 @@ def fn_token_refresh():
             fn_write_error('ERROR:  ' + str(status))
             return 0
     except Exception as error:
-        print("Error in token_refresh:  " + error.message)
-        fn_write_error("Error in token_refresh.py - Main: " + repr(error))
+        print("Error in fn_token_refresh():  " + error)
+        fn_write_error("Error in fn_token_refresh() - Main: " + repr(error))
         stack = traceback.print_exc()
         print(stack)
         fn_write_error("Stack trace: %s" % repr(stack))
@@ -79,9 +79,10 @@ def fn_token_refresh():
             settings.BB_SKY_TO_EMAIL,
             settings.BB_SKY_FROM_EMAIL,
             "SKY API ERROR",
-            "Error in sky_pi_auth.py - fn_token_refresh: %s" % repr(error),
+            "Error in sky_api_auth.py - fn_token_refresh: %s" % repr(error),
         )
         return 0
+
 
 def fn_do_token():
     """--------REFRESH THE TOKEN------------------"""
@@ -94,44 +95,31 @@ def fn_do_token():
         either set a timer or see if I can read the date and time from the
         cache files and compare to current time
      """
+    now = datetime.datetime.now()
     try:
         """
         Check to see if the token has expired, if so refresh it
         the token expires in 60 minutes, but the refresh token
         is good for 60 days
         """
-        t = cache.get('refreshtime')
-
-        if t is None:
-            r = fn_token_refresh()
-            print(r)
-        elif t < datetime.datetime.now() - datetime.timedelta(minutes=59):
-            # print('Out of limit')
-            # print(t)
-            # print(datetime.datetime.now() - datetime.timedelta(minutes=59))
-            r = fn_token_refresh()
-            # print(r)
+        time_refresh = cache.get(settings.BB_SKY_REFRESH_TIME_CACHE_KEY)
+        if time_refresh is None:
+            token_refresh = fn_token_refresh()
+        elif time_refresh < now - datetime.timedelta(minutes=59):
+            token_refresh = fn_token_refresh()
         else:
-            # print("within limit")
             pass
         """"--------GET THE TOKEN------------------"""
-        current_token = cache.get('tokenkey')
-        # print("Current Token = ")
-        # print(current_token)
+        current_token = cache.get(settings.BB_SKY_TOKEN_CACHE_KEY)
         return current_token
 
-    except Exception as e:
-        # print("Error in fn_do_token:  " + repr(e))
-        fn_write_error("Error in fn_do_token.py - Main: "
-                       + repr(e))
+    except Exception as error:
+        fn_write_error("Error in fn_do_token() - Main: "
+                       + repr(error))
+        stack = traceback.print_exc()
+        print(stack)
+        fn_write_error("Stack trace: %s" % repr(stack))
         fn_send_mail(settings.BB_SKY_TO_EMAIL,
                      settings.BB_SKY_FROM_EMAIL, "SKY API ERROR",
-                     "Error in sky_pi_auth.py - fn_do_token: " + repr(e))
+                     "Error in sky_pi_auth.py - fn_do_token: " + repr(error))
         return 0
-
-
-# def main():
-#     x = fn_do_token()
-#     print("Return = " + str(x))
-#
-# main()

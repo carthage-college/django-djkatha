@@ -56,4 +56,10 @@ urlpatterns = [
     path(
         'api/callback/', views.callback, name='callback',
     ),
+    path(
+        'api/token/', views.token, name='token',
+    ),
+    path(
+        'donors/<int:appeal>/list/', views.donors, name='donors',
+    ),
 ]
