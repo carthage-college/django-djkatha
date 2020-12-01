@@ -1,7 +1,17 @@
-{% extends "home.html" %}
+{% extends "donors/base.html" %}
 {% load humanize %}
+{% load livewhale_api %}
 {% block content %}
-<div class="forms-container col-lg-8 col-md-8 col-sm-12 col-xs-12 mb-4" style="padding-right:0px !important;">
+{% get_lw_content as intro blurbs 2470 %}
+{{intro.body}}
+{% if user.is_superuser %}
+<h2>
+  {{count|intcomma}} Giving Day Donations
+</h2>
+{% else %}
+  {% get_lw_content as header blurbs 2469 %}
+  {{ header.body }}
+{% endif %}
 <ul>
 {% for obj in donors %}
     {% ifchanged obj.last and ifchanged obj.first %}
@@ -19,5 +29,4 @@
     {% endifchanged %}
 {% endfor %}
 </ul>
-</div>
 {% endblock %}
