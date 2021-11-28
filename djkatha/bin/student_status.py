@@ -239,7 +239,11 @@ def main():
                     "SKY API:  Last run was: {0}".format(str(last_sql_date)),
                     "No new records for Blackbaud.",
                 )
-                # print(last_sql_date)
+
+        # set a new date in cache
+        a = datetime.datetime.now()
+        last_sql_date = a.strftime('%Y-%m-%d %H:%M:%S')
+        cache.set('Sql_date', last_sql_date)
 
     except Exception as error:
         print("Error in main: {0}".format(repr(error)))

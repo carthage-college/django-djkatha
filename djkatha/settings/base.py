@@ -106,10 +106,8 @@ TEMPLATES = [
         'DIRS': [
             os.path.join(BASE_DIR, 'templates'),
             '/data2/django_templates/djkorra/',
-            '/data2/django_templates/djbootmin/',
             '/data2/django_templates/djcher/',
-            '/data2/django_templates/django-djskins/',
-            '/data2/livewhale/includes/',
+            '/data2/django_templates/',
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -166,7 +164,7 @@ LDAP_CHALLENGE_ATTR = ''
 LDAP_AUTH_USER_PK = False
 # auth backends
 AUTHENTICATION_BACKENDS = (
-    'djauth.ldapBackend.LDAPBackend',
+    'djauth.backends.LDAPBackend',
     'django.contrib.auth.backends.ModelBackend',
 )
 AUTH_PASSWORD_VALIDATORS = [
@@ -335,10 +333,15 @@ LOGGING = {
 BB_SKY_CLIENT_ID = ''
 BB_SKY_CLIENT_SECRET = ''
 BB_SKY_TOKEN_FILE = ''
+BB_SKY_TOKEN_CACHE_KEY = 'tokenkey'
 BB_SKY_REFRESH_TOKEN_FILE = ''
+BB_SKY_REFRESH_TOKEN_CACHE_KEY = 'refresh_token'
+BB_SKY_REFRESH_TIME_CACHE_KEY = 'refreshtime'
 BB_SKY_CALLBACK_URI = ''
-BB_SKY_AUTHORIZE_URL = 'https://oauth2.sky.blackbaud.com/authorization'
-BB_SKY_TOKEN_URL = 'https://oauth2.sky.blackbaud.com/token'
+BB_SKY_OAUTH2_URL = 'https://oauth2.sky.blackbaud.com'
+BB_SKY_AUTHORIZE_URL = '{0}/authorization'.format(BB_SKY_OAUTH2_URL)
+BB_SKY_TOKEN_URL = '{0}/token'.format(BB_SKY_OAUTH2_URL)
+BB_SKY_API_URL = 'https://api.sky.blackbaud.com'
 BB_SKY_SUBSCRIPTION_KEY = ''
 BB_LOG_FOLDER = ''
 BB_SKY_TO_EMAIL = ''

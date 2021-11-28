@@ -8,6 +8,7 @@ import time
 import datetime
 import csv
 import arrow
+import traceback
 
 from djkatha.core.utilities import fn_send_mail
 from djkatha.core.utilities import fn_write_error
@@ -502,10 +503,13 @@ def update_const_custom_fields(current_token, itemid, comment, val):
             return 0
 
 
-    except Exception as e:
-        print("Error in update_const_custom_fields:  " + str(e))
+    except Exception as error:
+        print("Error in update_const_custom_fields:  " + str(error))
+        stack = traceback.print_exc()
+        print(stack)
         fn_write_error("Error in sky_api_calls.py - "
-                       "update_const_custom_fields: " + str(e))
+                       "update_const_custom_fields: " + str(error))
+        fn_write_error(stack)
         return 0
 
 
