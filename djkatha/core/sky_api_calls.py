@@ -27,10 +27,11 @@ def api_get(current_token, url):
         # print(status)
         while status != 200 or url != '':
             time.sleep(.2)  # SKY API Rate limited to 5 calls/sec
+            #print(current_token)
             headers = {'Bb-Api-Subscription-Key':
                            settings.BB_SKY_SUBSCRIPTION_KEY,
                        'Authorization': 'Bearer ' + current_token}
-            # print(headers)
+            #print(headers)
             response = requests.get(url=url,
                                     params=params,
                                     headers=headers)
@@ -62,7 +63,7 @@ def api_get(current_token, url):
 
 
 def api_post(current_token, url, data):
-    print("In api_post")
+    #print("In api_post")
     try:
         params = {'HOST': 'api.sky.blackbaud.com'}
         # status = 'Initial Value'
@@ -543,4 +544,3 @@ def set_const_custom_field(current_token, id, value, category, comment):
         fn_write_error("Error in sky_api_calls.py - "
                        "set_const_custom_field: " + str(e))
         return 0
-

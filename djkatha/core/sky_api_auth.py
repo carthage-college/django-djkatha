@@ -2,6 +2,7 @@
 
 import datetime
 import json
+import logging
 import os
 import requests
 import traceback
@@ -11,9 +12,10 @@ from django.core.cache import cache
 from djkatha.core.utilities import fn_send_mail
 from djkatha.core.utilities import fn_write_error
 
+logger = logging.getLogger('debug_logfile')
+
 
 def fn_token_refresh():
-    # print("In token_refresh")
     now = datetime.datetime.now()
     try:
         # Generates a new OAUTH2 access token and refresh token using
@@ -21,9 +23,9 @@ def fn_token_refresh():
         # to appropriate files for subsequent reference
         # :return: Tuple containing (return_code, access_token, refresh_token)
         refresh_token = cache.get(settings.BB_SKY_REFRESH_TOKEN_CACHE_KEY)
-        # print(refresh_token)
+        fn_write_error(refresh_token)
         ref_token_call = requests.post(
-            url='https://oauth2.sky.blackbaud.com/token',
+            url='{0}/token'.format(settings.BB_SKY_OAUTH2_URL),
             headers={'Content-Type': 'application/x-www-form-urlencoded'},
             data={
                 'grant_type': 'refresh_token',
@@ -48,15 +50,9 @@ def fn_token_refresh():
             cache.set(settings.BB_SKY_REFRESH_TOKEN_CACHE_KEY, refresh_token)
             cache.set(settings.BB_SKY_REFRESH_TIME_CACHE_KEY, now)
 
-            # print(access_token)
-            # print(refresh_token)
-
             return 1
 
         elif status == 403:  # OUT OF API QUOTA - Quit
-            # Print HTML repsonse and exit function with empty DataFrame
-            # print('ERROR:  ' + str(status) + ":" + response)
-            # print('You\'re out of API Quota!')
             fn_write_error('ERROR:  ' + str(status) + ":"
                            + ' You\'re out of API Quota!')
             fn_send_mail(settings.BB_SKY_TO_EMAIL,
@@ -66,14 +62,11 @@ def fn_token_refresh():
             exit()
             return 0
         else:
-            print('here')
-            fn_write_error('ERROR:  ' + str(status))
+            fn_write_error('ERROR eh:  ' + str(status))
             return 0
     except Exception as error:
-        print("Error in fn_token_refresh():  " + error)
         fn_write_error("Error in fn_token_refresh() - Main: " + repr(error))
         stack = traceback.print_exc()
-        print(stack)
         fn_write_error("Stack trace: %s" % repr(stack))
         fn_send_mail(
             settings.BB_SKY_TO_EMAIL,
@@ -96,7 +89,8 @@ def fn_do_token():
         cache files and compare to current time
      """
     now = datetime.datetime.now()
-    try:
+    #try:
+    if True:
         """
         Check to see if the token has expired, if so refresh it
         the token expires in 60 minutes, but the refresh token
@@ -112,14 +106,14 @@ def fn_do_token():
         """"--------GET THE TOKEN------------------"""
         current_token = cache.get(settings.BB_SKY_TOKEN_CACHE_KEY)
         return current_token
-
+    """
     except Exception as error:
-        fn_write_error("Error in fn_do_token() - Main: "
-                       + repr(error))
+        logger.debug("Error in fn_do_token() - Main: " + repr(error))
+        fn_write_error("Error in fn_do_token() - Main: " + repr(error))
         stack = traceback.print_exc()
-        print(stack)
         fn_write_error("Stack trace: %s" % repr(stack))
-        fn_send_mail(settings.BB_SKY_TO_EMAIL,
-                     settings.BB_SKY_FROM_EMAIL, "SKY API ERROR",
-                     "Error in sky_pi_auth.py - fn_do_token: " + repr(error))
+        #fn_send_mail(settings.BB_SKY_TO_EMAIL,
+        #             settings.BB_SKY_FROM_EMAIL, "SKY API ERROR",
+        #             "Error in sky_pi_auth.py - fn_do_token: " + repr(error))
         return 0
+    """

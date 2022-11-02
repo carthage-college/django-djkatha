@@ -79,10 +79,6 @@ def donors(request, appeal):
     )
     donors = []
     current_token = fn_do_token()
-    campaign = cache.get(key_campaign)
-    if not campaign:
-        campaign = api_get(current_token, earl_appeal)
-        cache.set(key_campaign, campaign)
     # fetch the appeal campaign
     campaign = cache.get(key_campaign)
     if not campaign:
@@ -108,4 +104,16 @@ def donors(request, appeal):
 
     return render(
         request, 'donors/index.html', {'donors': donors, 'count': len(donors)},
+    )
+
+
+def promotion_ajax(request, slug):
+    """
+    ajax request, returns HTML for dynamic display.
+    accepts a campaign slug for identifying the Promotion() class object.
+    """
+    return render(
+        request,
+        'giving/promotion_ajax.html',
+        {'data': None, 'earl': None},
     )

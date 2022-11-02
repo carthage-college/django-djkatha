@@ -57,7 +57,9 @@ def main():
         cache.set(key_campaign, campaign)
     print(campaign)
     gifts = api_get(current_token, earl_gift)
+    count = 0
     for gift in gifts['value']:
+        count += 1
         cid = gift['constituent_id']
         key_constituent = 'constituents_{0}'.format(cid)
         constituent = cache.get(key_constituent)
@@ -71,6 +73,7 @@ def main():
             )
             cache.set(key_constituent, constituent)
         print(
+            count,
             gift['amount']['value'],
             gift['is_anonymous'],
             gift.get('constituency'),

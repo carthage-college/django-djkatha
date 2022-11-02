@@ -1,10 +1,10 @@
-"""
-Django settings for project.
-"""
+# -*- coding: utf-8 -*-
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+"""Django settings for project."""
+
 import os
 
+from pwd import getpwuid
 # sqlserver connection string
 from djimix.settings.local import MSSQL_EARL
 from djimix.settings.local import INFORMIX_ODBC, INFORMIX_ODBC_TRAIN
@@ -18,7 +18,6 @@ from djimix.settings.local import (
     LD_LIBRARY_PATH,
     LD_RUN_PATH
 )
-
 # Debug
 DEBUG = False
 INFORMIX_DEBUG = 'debug'
@@ -26,10 +25,8 @@ ADMINS = (
     ('', ''),
 )
 MANAGERS = ADMINS
-
 SECRET_KEY = ''
 ALLOWED_HOSTS = []
-
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'America/Chicago'
 SITE_ID = 1
@@ -39,8 +36,8 @@ USE_TZ = False
 DEFAULT_CHARSET = 'utf-8'
 FILE_CHARSET = 'utf-8'
 SERVER_URL = ''
-API_URL = '{}/{}'.format(SERVER_URL, 'api')
-LIVEWHALE_API_URL = 'https://{}'.format(SERVER_URL)
+API_URL = '{0}/{1}'.format(SERVER_URL, 'api')
+LIVEWHALE_API_URL = 'https://{0}'.format(SERVER_URL)
 ROOT_URLCONF = 'djkatha.urls'
 WSGI_APPLICATION = 'djkatha.wsgi.application'
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -58,8 +55,8 @@ STATICFILES_DIRS = ()
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-#    'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 DATABASES = {
     'default': {
         'HOST': '127.0.0.1',
@@ -105,7 +102,7 @@ TEMPLATES = [
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
             os.path.join(BASE_DIR, 'templates'),
-            '/data2/django_templates/djkorra/',
+            '/data2/django_templates/djkali/',
             '/data2/django_templates/djcher/',
             '/data2/django_templates/',
         ],
@@ -128,13 +125,12 @@ TEMPLATES = [
     },
 ]
 # caching
+__USERNAME = getpwuid(os.getuid()).pw_name
 CACHES = {
     'default': {
-        # 'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-        #'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-        #'LOCATION': '127.0.0.1:11211',
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
         'LOCATION': '/var/tmp/django_djkatha_cache',
+        #'LOCATION': f'/tmp/{__USERNAME}-django/',
         'TIMEOUT': None,
         'KEY_PREFIX': 'djkatha_',
         'OPTIONS': {
@@ -252,7 +248,7 @@ LOGGING = {
         },
         'debug_logfile': {
             'level': 'DEBUG',
-            'filters': ['require_debug_true'], # do not run debug logger in production
+            #'filters': ['require_debug_true'], # do not run debug logger in production
             'class': 'logging.FileHandler',
             'filename': DEBUG_LOG_FILENAME,
             'formatter': 'verbose'
