@@ -15,6 +15,26 @@ from djkatha.core.sky_api_auth import fn_do_token
 from djkatha.core.sky_api_calls import api_get
 
 
+def get_appeal(appeal):
+    earl_appeal = '{0}/fundraising/v1/appeals/{1}'.format(
+        settings.BB_SKY_API_URL,
+        appeal,
+    )
+    key_campaign = 'campaigns_{0}'.format(appeal)
+    earl_gift = '{0}/gift/v1/gifts?appeal_id={1}&limit=2500'.format(
+        settings.BB_SKY_API_URL,
+        appeal,
+    )
+    current_token = fn_do_token()
+    # fetch the appeal campaign
+    campaign = cache.get(key_campaign)
+    if not campaign:
+        campaign = api_get(current_token, earl_appeal)
+        cache.set(key_campaign, campaign)
+    # fetch all donations
+    return api_get(current_token, earl_gift)
+
+
 def callback(request):
     """Call back from raiser's edge API."""
     if request.method=='POST':
@@ -66,26 +86,10 @@ def token(request):
     return response
 
 
-def donors(request, appeal):
-    """Display donors for an appeal campaign."""
-    earl_appeal = '{0}/fundraising/v1/appeals/{1}'.format(
-        settings.BB_SKY_API_URL,
-        appeal,
-    )
-    key_campaign = 'campaigns_{0}'.format(appeal)
-    earl_gift = '{0}/gift/v1/gifts?appeal_id={1}&limit=2500'.format(
-        settings.BB_SKY_API_URL,
-        appeal,
-    )
-    donors = []
-    current_token = fn_do_token()
-    # fetch the appeal campaign
-    campaign = cache.get(key_campaign)
-    if not campaign:
-        campaign = api_get(current_token, earl_appeal)
-        cache.set(key_campaign, campaign)
-    # fetch all donations
-    gifts = api_get(current_token, earl_gift)
+def donors(request, appeal, display):
+    """Display donors for an appeal where display = list, ticker, mini."""
+    constituents = []
+    gifts = get_appeal(appeal)
     for gift in gifts['value']:
         cid = gift['constituent_id']
         key_constituent = 'constituents_{0}'.format(cid)
@@ -99,11 +103,14 @@ def donors(request, appeal):
                 )
             )
             cache.set(key_constituent, constituent)
-        if constituent not in donors and constituent.get('last'):
-            donors.append(constituent)
+        if constituent not in constituents and constituent.get('last'):
+            constituents.append(constituent)
 
+    template = 'donors/{0}.html'.format(display)
+    if display == 'ticker':
+        constituents.append({'first': 'Larry', 'last': 'Kurkowski'})
     return render(
-        request, 'donors/index.html', {'donors': donors, 'count': len(donors)},
+        request, template, {'donors': constituents, 'count': len(constituents)},
     )
 
 

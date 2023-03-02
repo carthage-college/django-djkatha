@@ -85,9 +85,9 @@ INSTALLED_APPS = [
 ]
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'django.middleware.cache.UpdateCacheMiddleware',
+    #'django.middleware.cache.UpdateCacheMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.cache.FetchFromCacheMiddleware',
+    #'django.middleware.cache.FetchFromCacheMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -342,6 +342,10 @@ BB_SKY_SUBSCRIPTION_KEY = ''
 BB_LOG_FOLDER = ''
 BB_SKY_TO_EMAIL = ''
 BB_SKY_FROM_EMAIL = ''
+
+# giving day
+GIVING_DAY_APPEAL_ID = 0
+
 
 ##################
 # LOCAL SETTINGS #

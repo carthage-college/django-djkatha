@@ -60,7 +60,6 @@ urlpatterns = [
         'api/token/', views.token, name='token',
     ),
     path(
-        #'donors/<int:appeal>/list/', views.donors, name='donors',
-        'donors/<str:appeal>/list/', views.donors, name='donors',
+        'donors/<str:appeal>/<str:display>/', views.donors, name='donors',
     ),
 ]
