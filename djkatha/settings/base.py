@@ -319,7 +319,12 @@ MANAGERS_GROUP = 'Managers'
 # giving day
 GIVING_DAY_APPEAL_ID = 0
 GIVING_DAY_TICKER_LIMIT = 30
-GIVING_DAY_GOALS = {}
+GIVING_DAY_GOALS = {
+    '420': {
+        'goal': '666',
+        'earl': '/giving/give-today/',
+    },
+}
 GIVING_DAY_START_DATE = None
 GIVING_DAY_END_DATE = None
 
