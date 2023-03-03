@@ -3,6 +3,7 @@
 
 import argparse
 import datetime
+import itertools
 import logging
 import os
 import sys
@@ -40,6 +41,13 @@ parser.add_argument(
     dest='appeal',
 )
 parser.add_argument(
+    '-d',
+    '--display',
+    required=True,
+    help="Display type",
+    dest='display',
+)
+parser.add_argument(
     '--test',
     action='store_true',
     help="Dry run?",
@@ -50,19 +58,31 @@ parser.add_argument(
 def main():
     """Obtain appeal data from sky api."""
     gifts = get_appeal(appeal)
-    donations = {}
+
+    donations = []
+    constituents = []
+    ticker = {}
+
     for gift in gifts['value']:
         post_date = datetime.datetime.strptime(gift['post_date'], '%Y-%m-%dT%H:%M:%S')
         if post_date > settings.GIVING_DAY_START_DATE:
-            donations[gift['id']] = gift
-            if test:
-                print(gift['post_date'], gift['date_added'])
-                reversed(sorted(a.keys()))
+            ticker[gift['id']] = gift
+            donations.append(gift)
 
-    constituents = []
-    for donation in reversed(sorted(donations.keys())):
-        #print(donation, donations[donation]['post_date'])
-        cid = donations[donation]['constituent_id']
+    if display == 'ticker':
+        donations = reversed(sorted(ticker.keys()))
+
+    #for donation in reversed(sorted(ticker.keys())):
+    for donation in donations:
+        if test:
+            print(donation, ticker[donation]['post_date'])
+
+        if display == 'ticker':
+            cid = ticker[donation]['constituent_id']
+        else:
+            cid = gift['constituent_id']
+
+        cid = ticker[donation]['constituent_id']
         key_constituent = 'constituents_{0}'.format(cid)
         constituent = cache.get(key_constituent)
         if not constituent:
@@ -74,17 +94,20 @@ def main():
                 )
             )
             cache.set(key_constituent, constituent)
-        if constituent not in constituents:
+        if constituent not in constituents and constituent.get('last'):
             constituents.append(constituent)
     if test:
+        print(len(donations))
         print(len(constituents))
-    for constituent in constituents:
-        print(constituent)
+    else:
+        for constituent in constituents[:30]:
+            print(constituent['last'], constituent['first'])
 
 
 if __name__ == '__main__':
     args = parser.parse_args()
     appeal = args.appeal
+    display = args.display
     test = args.test
 
     if test:

@@ -88,11 +88,24 @@ def token(request):
 
 def donors(request, appeal, display):
     """Display donors for an appeal where display = list, ticker, mini."""
+    donations = []
     constituents = []
+    ticker = {}
     gifts = get_appeal(appeal)
     for gift in gifts['value']:
         post_date = datetime.datetime.strptime(gift['post_date'], '%Y-%m-%dT%H:%M:%S')
-        cid = gift['constituent_id']
+        if post_date > settings.GIVING_DAY_START_DATE:
+            ticker[gift['id']] = gift
+            donations.append(gift)
+
+    if display == 'ticker':
+        donations = reversed(sorted(ticker.keys()))
+
+    for donation in donations:
+        if display == 'ticker':
+            cid = ticker[donation]['constituent_id']
+        else:
+            cid = donation['constituent_id']
         key_constituent = 'constituents_{0}'.format(cid)
         constituent = cache.get(key_constituent)
         if not constituent:
@@ -104,13 +117,14 @@ def donors(request, appeal, display):
                 )
             )
             cache.set(key_constituent, constituent)
-        if constituent not in constituents and post_date > settings.GIVING_DAY_START_DATE:
+        if constituent not in constituents and constituent.get('last'):
             constituents.append(constituent)
 
     template = 'donors/{0}.html'.format(display)
     content_type='text/html; charset=utf-8'
     if display == 'ticker':
         content_type='text/plain; charset=utf-8'
+        constituents = constituents[:settings.GIVING_DAY_TICKER_LIMIT]
     return render(
         request,
         template,
