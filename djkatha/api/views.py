@@ -91,6 +91,10 @@ def donors(request, appeal, display):
     donations = []
     constituents = []
     ticker = {}
+    total = float()
+    goal = float(settings.GIVING_DAY_GOALS[appeal]['goal'])
+    earl = settings.GIVING_DAY_GOALS[appeal]['earl']
+    percent = 0
     gifts = get_appeal(appeal)
     for gift in gifts['value']:
         post_date = datetime.datetime.strptime(gift['post_date'], '%Y-%m-%dT%H:%M:%S')
@@ -106,6 +110,9 @@ def donors(request, appeal, display):
             cid = ticker[donation]['constituent_id']
         else:
             cid = donation['constituent_id']
+            amount = donation['amount']['value']
+            total += amount
+
         key_constituent = 'constituents_{0}'.format(cid)
         constituent = cache.get(key_constituent)
         if not constituent:
@@ -125,10 +132,20 @@ def donors(request, appeal, display):
     if display == 'ticker':
         content_type='text/plain; charset=utf-8'
         constituents = constituents[:settings.GIVING_DAY_TICKER_LIMIT]
+
+    percent = round(int((total / goal) * 100), 2)
     return render(
         request,
         template,
-        {'donors': constituents, 'count': len(constituents), 'post_date': post_date},
+        {
+            'count': len(constituents),
+            'donors': constituents,
+            'earl': earl,
+            'percent': percent,
+            'post_date': post_date,
+            'total': '%.2f' % total,
+
+        },
         content_type=content_type,
     )
 
