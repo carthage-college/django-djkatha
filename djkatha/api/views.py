@@ -2,6 +2,7 @@
 
 """URLs for all views."""
 
+import datetime
 import json
 import requests
 
@@ -10,7 +11,6 @@ from django.core.cache import cache
 from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
-
 from djkatha.core.sky_api_auth import fn_do_token
 from djkatha.core.sky_api_calls import api_get
 
@@ -91,6 +91,7 @@ def donors(request, appeal, display):
     constituents = []
     gifts = get_appeal(appeal)
     for gift in gifts['value']:
+        post_date = datetime.datetime.strptime(gift['post_date'], '%Y-%m-%dT%H:%M:%S')
         cid = gift['constituent_id']
         key_constituent = 'constituents_{0}'.format(cid)
         constituent = cache.get(key_constituent)
@@ -103,14 +104,18 @@ def donors(request, appeal, display):
                 )
             )
             cache.set(key_constituent, constituent)
-        if constituent not in constituents and constituent.get('last'):
+        if constituent not in constituents and post_date > settings.GIVING_DAY_START_DATE:
             constituents.append(constituent)
 
     template = 'donors/{0}.html'.format(display)
+    content_type='text/html; charset=utf-8'
     if display == 'ticker':
-        constituents.append({'first': 'Larry', 'last': 'Kurkowski'})
+        content_type='text/plain; charset=utf-8'
     return render(
-        request, template, {'donors': constituents, 'count': len(constituents)},
+        request,
+        template,
+        {'donors': constituents, 'count': len(constituents), 'post_date': post_date},
+        content_type=content_type,
     )
 
 

@@ -61,9 +61,9 @@ DATABASES = {
     'default': {
         'HOST': '127.0.0.1',
         'PORT': '3306',
-        'NAME': 'django_djkatha',
+        'NAME': 'django_{0}'.format(PROJECT_APP),
         'ENGINE': 'django.db.backends.mysql',
-        'USER': '',
+        'USER': 'django_{0}'.format(PROJECT_APP),
         'PASSWORD': ''
     },
 }
@@ -85,16 +85,11 @@ INSTALLED_APPS = [
 ]
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    #'django.middleware.cache.UpdateCacheMiddleware',
     'django.middleware.common.CommonMiddleware',
-    #'django.middleware.cache.FetchFromCacheMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    # the following should be uncommented unless you are
-    # embedding your apps in iframes
-    #'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 # template stuff
 TEMPLATES = [
@@ -111,6 +106,7 @@ TEMPLATES = [
             'debug':DEBUG,
             'context_processors': [
                 'djtools.context_processors.sitevars',
+                'djkatha.context_processors.sitevars',
                 'django.contrib.auth.context_processors.auth',
                 'django.template.context_processors.debug',
                 'django.template.context_processors.media',
@@ -129,10 +125,9 @@ __USERNAME = getpwuid(os.getuid()).pw_name
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': '/var/tmp/django_djkatha_cache',
-        #'LOCATION': f'/tmp/{__USERNAME}-django/',
+        'LOCATION': '/var/tmp/django_{0}_cache'.format(PROJECT_APP),
         'TIMEOUT': None,
-        'KEY_PREFIX': 'djkatha_',
+        'KEY_PREFIX': '{0}_'.format(PROJECT_APP),
         'OPTIONS': {
            'MAX_ENTRIES': 80000,
         }
@@ -183,7 +178,7 @@ LOGIN_REDIRECT_URL = ROOT_URL
 USE_X_FORWARDED_HOST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_COOKIE_DOMAIN='.carthage.edu'
-SESSION_COOKIE_NAME ='django_djkatha_cookie'
+SESSION_COOKIE_NAME ='django_{0}_cookie'.format(PROJECT_APP)
 SESSION_COOKIE_AGE = 86400
 # SMTP settings
 EMAIL_HOST = ''
@@ -319,6 +314,13 @@ LOGGING = {
     }
 }
 
+# app settings
+MANAGERS_GROUP = 'Managers'
+# giving day
+GIVING_DAY_APPEAL_ID = 0
+GIVING_DAY_START_DATE = None
+GIVING_DAY_END_DATE = None
+
 # Blackbaud Sky API
 # ---------------------------
 # To test against the test database, is first necessary to go through the
@@ -342,9 +344,6 @@ BB_SKY_SUBSCRIPTION_KEY = ''
 BB_LOG_FOLDER = ''
 BB_SKY_TO_EMAIL = ''
 BB_SKY_FROM_EMAIL = ''
-
-# giving day
-GIVING_DAY_APPEAL_ID = 0
 
 
 ##################

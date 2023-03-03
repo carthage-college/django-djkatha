@@ -17,34 +17,31 @@ from django.conf import settings
 
 
 def api_get(current_token, url):
-    # print("In api_get")
-    # print(url)
-
+    """Fetch data from the api end point."""
     try:
         params = {'HOST': 'api.sky.blackbaud.com'}
         status = 0
         # Setting status to something other than 200 initially
-        # print(status)
         while status != 200 or url != '':
             time.sleep(.2)  # SKY API Rate limited to 5 calls/sec
-            #print(current_token)
-            headers = {'Bb-Api-Subscription-Key':
-                           settings.BB_SKY_SUBSCRIPTION_KEY,
-                       'Authorization': 'Bearer ' + current_token}
-            #print(headers)
-            response = requests.get(url=url,
-                                    params=params,
-                                    headers=headers)
-
+            headers = {
+                'Bb-Api-Subscription-Key':
+                settings.BB_SKY_SUBSCRIPTION_KEY,
+                'Authorization': 'Bearer ' + current_token,
+            }
+            response = requests.get(
+                url=url,
+                params=params,
+                headers=headers,
+            )
             status = response.status_code
-            # print(status)
             if status == 400:
-                print('ERROR:  ' + str(status) + ":" + response.text)
+                fn_write_error('ERROR:  ' + str(status) + ":" + response.text)
                 return 0
 
             elif status == 403:   # OUT OF API QUOTA - Quit
-                print('ERROR:  ' + str(status) + ":" + response.text)
-                print('You\'re out of API Quota!')
+                fn_write_error('ERROR:  ' + str(status) + ":" + response.text)
+                fn_write_error('You\'re out of API Quota!')
                 return 0
 
             else:
@@ -56,98 +53,82 @@ def api_get(current_token, url):
                 return response_dict
 
     except Exception as e:
-        print("Error in api_get:  " + str(e))
-        fn_write_error("Error in sky_api_calls.py api_get: "
-                       + str(e))
+        fn_write_error("Error in sky_api_calls.py api_get: " + str(e))
         return 0
 
 
 def api_post(current_token, url, data):
-    #print("In api_post")
+    """post data to the api end point."""
     try:
         params = {'HOST': 'api.sky.blackbaud.com'}
         # status = 'Initial Value'
-
-        headers = {'Content-Type': 'application/json',
-                   'Bb-Api-Subscription-Key': settings.BB_SKY_SUBSCRIPTION_KEY,
-                   'Authorization': 'Bearer ' + current_token}
-
-        response = requests.post(url=url, headers=headers,
-                                params=params,
-                                data=json.dumps(data)
-                                )
+        headers = {
+            'Content-Type': 'application/json',
+            'Bb-Api-Subscription-Key': settings.BB_SKY_SUBSCRIPTION_KEY,
+            'Authorization': 'Bearer ' + current_token,
+        }
+        response = requests.post(
+            url=url,
+            headers=headers,
+            params=params,
+            data=json.dumps(data),
+        )
         status = response.status_code
         stat_msg = response.text
-        # print(status)
-        # print(stat_msg)
-
         return status
     except Exception as e:
-        print("Error in api_post:  " + str(e))
-
-        fn_write_error("Error in sky_api_calls.py api_post: "
-                       + str(e))
-
+        fn_write_error("Error in sky_api_calls.py api_post: " + str(e))
         return 0
 
 
 def api_patch(current_token, url, data):
-    # print("In api_patch")
     try:
         params = {'HOST': 'api.sky.blackbaud.com'}
         # status = 'Initial Value'
-
-        headers = {'Content-Type': 'application/json',
-                   'Bb-Api-Subscription-Key': settings.BB_SKY_SUBSCRIPTION_KEY,
-                   'Authorization': 'Bearer ' + current_token}
-
-        response = requests.patch(url=url, headers=headers,
-                                 params=params,
-                                 data=json.dumps(data)
-                                 )
+        headers = {
+            'Content-Type': 'application/json',
+            'Bb-Api-Subscription-Key': settings.BB_SKY_SUBSCRIPTION_KEY,
+            'Authorization': 'Bearer ' + current_token,
+        }
+        response = requests.patch(
+            url=url, headers=headers,
+            params=params,
+            data=json.dumps(data),
+        )
         status = response.status_code
         stat_msg = response.text
-        # print(status)
-        # print(stat_msg)
 
         return status
     except Exception as e:
-        print("Error in api_patch:  " + str(e))
-        fn_write_error("Error in sky_api_calls.py api_patch: "
-                       + str(e))
+        fn_write_error("Error in sky_api_calls.py api_patch: " + str(e))
         return 0
 
 
 def api_delete(current_token, url):
-    print("In api_delete")
     try:
         params = {'HOST': 'api.sky.blackbaud.com'}
 
-        headers = {'Content-Type': 'application/json',
-                   'Bb-Api-Subscription-Key': settings.BB_SKY_SUBSCRIPTION_KEY,
-                   'Authorization': 'Bearer ' + current_token}
+        headers = {
+            'Content-Type': 'application/json',
+            'Bb-Api-Subscription-Key': settings.BB_SKY_SUBSCRIPTION_KEY,
+            'Authorization': 'Bearer ' + current_token,
+        }
 
         response = requests.delete(url=url, headers=headers, params=params)
         status = response.status_code
         stat_msg = response.text
-        # print(status)
-        # print(stat_msg)
 
         return status
     except Exception as e:
-        print("Error in api_delete:  " + str(e))
-        fn_write_error("Error in sky_api_calls.py api_delete: "
-                       + str(e))
+        fn_write_error("Error in sky_api_calls.py api_delete: " + str(e))
         return 0
 
 
 def get_const_custom_fields(current_token, id, category):
-    # print("In get_const_custom_fields")
     try:
         urlst = 'https://api.sky.blackbaud.com/constituent/v1/constituents/' \
                 + str(id) + '/customfields'
         x = api_get(current_token, urlst)
-        # print(x)
 
         # This will return multiple records...How to parse things to get the
         # one item I want...
@@ -156,7 +137,6 @@ def get_const_custom_fields(current_token, id, category):
             return 0
         else:
             for i in x['value']:
-                # print(i)
                 if i['category'] == category:
                     item_id = i['id']
                     # print("ID = " + i['id'])
@@ -174,11 +154,8 @@ def get_const_custom_fields(current_token, id, category):
                     return item_id
 
     except Exception as e:
-        print("Error in sky_api_calls.py - get_const_custom_fields "
-                       "for: " + str(id) + ", " + str(e))
         fn_write_error("Error in sky_api_calls.py - get_const_custom_fields "
                        "for: " + str(id) + ", " + str(e))
-
         return 0
 
 
@@ -231,7 +208,6 @@ def get_relationship_types(current_token):
         fn_write_error("Error in sky_api_calls.py - get_relationship_types: "
                        + str(e))
         return 0
-
 
 
 def get_custom_fields(current_token):
@@ -293,7 +269,6 @@ def get_constituents_custom_field_list(current_token, searchtime):
         fn_write_error("Error in sky_api_calls.py - "
                        "get_constituents_custom_field_list: " + str(e))
         return 0
-
 
 
 def get_custom_field_value(current_token, category):
