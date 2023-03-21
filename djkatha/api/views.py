@@ -90,6 +90,7 @@ def donors(request, appeal, display):
     """Display donors for an appeal where display = list, ticker, mini."""
     donations = []
     constituents = []
+    mini = []
     ticker = {}
     total = float()
     goal = float(settings.GIVING_DAY_GOALS[appeal]['goal'])
@@ -116,6 +117,7 @@ def donors(request, appeal, display):
         key_constituent = 'constituents_{0}'.format(cid)
         constituent = cache.get(key_constituent)
         if not constituent:
+            current_token = fn_do_token()
             constituent = api_get(
                 current_token,
                 '{0}/constituent/v1/constituents/{1}'.format(
@@ -124,6 +126,8 @@ def donors(request, appeal, display):
                 )
             )
             cache.set(key_constituent, constituent)
+        if constituent not in mini:
+            mini.append(constituent)
         if constituent not in constituents and constituent.get('last'):
             constituents.append(constituent)
 
@@ -132,7 +136,8 @@ def donors(request, appeal, display):
     if display == 'ticker':
         content_type='text/plain; charset=utf-8'
         constituents = constituents[:settings.GIVING_DAY_TICKER_LIMIT]
-
+    elif display == 'mini':
+        constituents = mini
     percent = round(int((total / goal) * 100), 2)
     return render(
         request,
