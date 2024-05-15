@@ -78,6 +78,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # needed for template tags
     'djtools',
+    # gmail api for send mail
+    'gmailapi_backend',
     # sign in as a user
     'loginas',
 ]
