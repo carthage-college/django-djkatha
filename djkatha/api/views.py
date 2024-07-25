@@ -97,11 +97,13 @@ def donors(request, appeal, display):
     earl = settings.GIVING_DAY_GOALS[appeal]['earl']
     percent = 0
     gifts = get_appeal(appeal)
-    for gift in gifts['value']:
-        post_date = datetime.datetime.strptime(gift['post_date'], '%Y-%m-%dT%H:%M:%S')
-        if post_date > settings.GIVING_DAY_START_DATE:
-            ticker[gift['id']] = gift
-            donations.append(gift)
+    post_date = None
+    if gifts and gifts.get('value'):
+        for gift in gifts['value']:
+            post_date = datetime.datetime.strptime(gift['post_date'], '%Y-%m-%dT%H:%M:%S')
+            if post_date > settings.GIVING_DAY_START_DATE:
+                ticker[gift['id']] = gift
+                donations.append(gift)
 
     if display == 'ticker':
         donations = reversed(sorted(ticker.keys()))
