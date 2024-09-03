@@ -1,7 +1,6 @@
 arrow
 cryptography
 django==4.2.15
-django-gmailapi-json-backend
 django-loginas
 mysqlclient
 python-ldap
