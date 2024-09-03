@@ -22,6 +22,7 @@ urlpatterns = [
     # django admin
     path('rocinante/', include('loginas.urls')),
     path('rocinante/', admin.site.urls),
+    #path('saml/', include('djangosaml2.urls')),
     # auth
     path(
         'accounts/login/',

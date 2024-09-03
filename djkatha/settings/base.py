@@ -3,6 +3,8 @@
 """Django settings for project."""
 
 import os
+import saml2
+import saml2.saml
 
 from pwd import getpwuid
 # sqlserver connection string
@@ -76,6 +78,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.staticfiles',
+    # saml2
+    #'djangosaml2',
     # needed for template tags
     'djtools',
     # gmail api for send mail
@@ -91,6 +95,26 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
 ]
+
+#MIDDLEWARE.append('djangosaml2.middleware.SamlSessionMiddleware')
+
+# saml2 settings
+SAML_SESSION_COOKIE_NAME = 'saml_session'
+SAML_SESSION_COOKIE_SAMESITE = 'Lax'
+SAML_DEFAULT_BINDING = saml2.BINDING_HTTP_POST
+SAML_LOGOUT_REQUEST_PREFERRED_BINDING = saml2.BINDING_HTTP_POST
+SAML_IGNORE_LOGOUT_ERRORS = True
+SAML_DJANGO_USER_MAIN_ATTRIBUTE = 'email'
+SAML_DJANGO_USER_MAIN_ATTRIBUTE_LOOKUP = '__iexact'
+SAML_CREATE_UNKNOWN_USER = True
+ACS_DEFAULT_REDIRECT_URL = ROOT_URL
+SAML_ATTRIBUTE_MAPPING = {
+    'cn': ('username', ),
+    'mail': ('email', ),
+    'givenName': ('first_name', ),
+    'sn': ('last_name', ),
+}
+SAML_CSP_HANDLER=''
 # template stuff
 TEMPLATES = [
     {
@@ -155,6 +179,7 @@ LDAP_CHALLENGE_ATTR = ''
 LDAP_AUTH_USER_PK = False
 # auth backends
 AUTHENTICATION_BACKENDS = (
+    #'djangosaml2.backends.Saml2Backend',
     'djauth.backends.LDAPBackend',
     'django.contrib.auth.backends.ModelBackend',
 )
@@ -172,14 +197,20 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-LOGIN_URL = '{0}accounts/login/'.format(ROOT_URL)
-LOGOUT_URL = '{0}accounts/logout/'.format(ROOT_URL)
+
+LOGIN_URL = '/saml2/login/'
+
+#LOGIN_URL = '{0}accounts/login/'.format(ROOT_URL)
+#LOGOUT_URL = '{0}accounts/logout/'.format(ROOT_URL)
 LOGIN_REDIRECT_URL = ROOT_URL
+
+
 USE_X_FORWARDED_HOST = True
-SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_DOMAIN='.carthage.edu'
 SESSION_COOKIE_NAME ='django_{0}_cookie'.format(PROJECT_APP)
 SESSION_COOKIE_AGE = 86400
+SESSION_COOKIE_SECURE = True
 # gmail API settings
 EMAIL_FROM = ''
 GMAIL_USER = ''
@@ -192,7 +223,10 @@ DEFAULT_FROM_EMAIL = ''
 SERVER_EMAIL = ''
 SERVER_MAIL=''
 # logging
-LOG_FILEPATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs/')
+LOG_FILEPATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs/',
+)
+LOG_FILENAME = '{0}{1}'.format(LOG_FILEPATH, 'debug.log')
 DEBUG_LOG_FILENAME = LOG_FILEPATH + 'debug.log'
 INFO_LOG_FILENAME = LOG_FILEPATH + 'info.log'
 ERROR_LOG_FILENAME = LOG_FILEPATH + 'error.log'
@@ -202,105 +236,76 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'standard': {
-            'format' : '[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s',
-            'datefmt' : '%Y/%b/%d %H:%M:%S'
+            'format': '[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s',
+            'datefmt': '%Y/%b/%d %H:%M:%S',
         },
         'verbose': {
             'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s',
-            'datefmt' : '%Y/%b/%d %H:%M:%S'
-        },
-        'custom': {
-            'format': '%(asctime)s: %(levelname)s: %(message)s',
-            'datefmt' : '%m/%d/%Y %I:%M:%S %p'
+            'datefmt': '%Y/%b/%d %H:%M:%S',
         },
         'simple': {
-            'format': '%(levelname)s %(message)s'
+            'format': '%(levelname)s %(message)s',
         },
     },
     'filters': {
         'require_debug_false': {
-            '()': 'django.utils.log.RequireDebugFalse'
+            '()': 'django.utils.log.RequireDebugFalse',
         },
         'require_debug_true': {
             '()': 'django.utils.log.RequireDebugTrue',
         },
     },
     'handlers': {
+        'logfile': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': LOG_FILENAME,
+            'formatter': 'standard',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard',
+        },
+        'mail_admins': {
+            'level': 'ERROR',
+            'filters': ['require_debug_false'],
+            'include_html': True,
+            'class': 'django.utils.log.AdminEmailHandler',
+        },
+    },
+    'loggers': {
         'custom_logfile': {
-            'level':'ERROR',
-            'filters': ['require_debug_true'], # do not run error logger in production
+            'level': 'ERROR',
             'class': 'logging.FileHandler',
             'filename': CUSTOM_LOG_FILENAME,
             'formatter': 'custom',
         },
         'info_logfile': {
-            'level':'INFO',
-            'class':'logging.handlers.RotatingFileHandler',
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
             'backupCount': 10,
             'maxBytes': 50000,
-            'filters': ['require_debug_false'], # run logger in production
             'filename': INFO_LOG_FILENAME,
             'formatter': 'simple',
         },
         'debug_logfile': {
             'level': 'DEBUG',
-            #'filters': ['require_debug_true'], # do not run debug logger in production
+            'handlers': ['logfile'],
             'class': 'logging.FileHandler',
             'filename': DEBUG_LOG_FILENAME,
-            'formatter': 'verbose'
+            'formatter': 'verbose',
         },
         'error_logfile': {
             'level': 'ERROR',
-            #'filters': ['require_debug_true'], # do not run error logger in production
             'class': 'logging.FileHandler',
             'filename': ERROR_LOG_FILENAME,
-            'formatter': 'verbose'
-        },
-        'console':{
-            'level':'INFO',
-            'class':'logging.StreamHandler',
-            'formatter': 'standard'
-        },
-        'mail_admins': {
-            'level': 'ERROR',
-            #'filters': ['require_debug_false'],
-            'include_html': True,
-            'class': 'django.utils.log.AdminEmailHandler'
-        }
-    },
-    'loggers': {
-        'redpanda': {
-            'handlers':['debug_logfile'],
-            'propagate': True,
-            'level':'DEBUG',
-        },
-        'redpanda.lynx': {
-            'handlers':['debug_logfile'],
-            'propagate': True,
-            'level':'DEBUG',
-        },
-        'redpanda.core': {
-            'handlers':['debug_logfile'],
-            'propagate': True,
-            'level':'DEBUG',
-        },
-        'error_logger': {
-            'handlers': ['error_logfile'],
-            'level': 'ERROR'
-         },
-        'info_logger': {
-            'handlers': ['info_logfile'],
-            'level': 'INFO'
-        },
-        'debug_logger': {
-            'handlers':['debug_logfile'],
-            'propagate': True,
-            'level':'DEBUG',
+            'formatter': 'verbose',
         },
         'django': {
-            'handlers':['console'],
+            'handlers': ['console'],
             'propagate': True,
-            'level':'WARN',
+            'level': 'WARN',
         },
         'django.db.backends': {
             'handlers': ['console'],
@@ -308,11 +313,11 @@ LOGGING = {
             'propagate': False,
         },
         'django.request': {
-            'handlers': ['mail_admins', 'error_logfile'],
+            'handlers': ['mail_admins'],
             'level': 'ERROR',
             'propagate': True,
         },
-    }
+    },
 }
 
 # app settings
